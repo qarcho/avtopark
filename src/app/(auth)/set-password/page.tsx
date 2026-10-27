@@ -9,7 +9,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getTranslations("auth"))("setPasswordTitle") };
 }
 
-// Reached from an invite or password-reset email, after /auth/confirm has logged the person in.
+// Reached from an invite (/auth/accept) or password-reset email (/auth/confirm), once the link has logged the person in.
 export default async function SetPasswordPage() {
   if (!(await getUser())) redirect("/login");
   const t = await getTranslations("auth");

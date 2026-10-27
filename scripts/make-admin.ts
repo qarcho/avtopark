@@ -29,7 +29,7 @@ async function main() {
   if (!userId) {
     const { data, error } = await admin.auth.admin.inviteUserByEmail(email.data, {
       data: { full_name: fullName },
-      redirectTo: `${site}/auth/confirm?next=/set-password`,
+      redirectTo: `${site}/auth/accept`,
     });
     if (error || !data.user) throw error ?? new Error("invite failed");
     userId = data.user.id;

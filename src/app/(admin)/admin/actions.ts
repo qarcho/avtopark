@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { isPlatformAdmin } from "@/lib/auth";
 import { env } from "@/lib/env";
+import { INVITE_LANDING_PATH } from "@/lib/routes";
 import { success, type FormState } from "@/lib/form-state";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createOrganizationSchema, fieldErrors, formObject } from "@/lib/validation";
@@ -39,7 +40,7 @@ export async function createOrganization(_prev: FormState, form: FormData): Prom
   } else {
     const { data: invited, error } = await admin.auth.admin.inviteUserByEmail(ownerEmail, {
       data: { full_name: ownerName },
-      redirectTo: `${env.NEXT_PUBLIC_SITE_URL}/auth/confirm?next=/set-password`,
+      redirectTo: `${env.NEXT_PUBLIC_SITE_URL}${INVITE_LANDING_PATH}`,
     });
     if (error || !invited.user) {
       console.error("owner invite failed", error?.code);

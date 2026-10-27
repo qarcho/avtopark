@@ -34,7 +34,7 @@ Done (code):
 
 Waiting on Giorgi (see docs/SETUP.md for exact clicks):
 - [ ] Fill in the four Supabase values in `.env.local`
-- [ ] Supabase dashboard: turn off public sign-up, set redirect URLs, paste the two email templates
+- [ ] Supabase dashboard: turn off public sign-up, set redirect URLs (email templates stay standard for now)
 - [ ] GitHub username (to put the code online) and then connect Vercel
 
 Then Claude will: apply the database, run all tests, load demo data, make Giorgi platform admin, deploy to Vercel.
@@ -49,7 +49,7 @@ Vehicle list with status filters, add/edit vehicle, photos, service flag, remind
 
 ## Before real customers use it
 
-- **Email service**: Supabase's built-in email only reaches your own address. Before inviting real staff we need an email service (e.g. Resend, free up to 3,000 emails/month) and ideally your own domain for sending.
+- **Email service**: Supabase's built-in email only reaches your own address. Before inviting real staff we need an email service (e.g. Resend, free up to 3,000 emails/month) and ideally your own domain for sending. At the same time: Georgian/English email templates (docs/SETUP.md section 3). Until then emails are English-only and a password-reset link works only in the browser where it was requested.
 - **Backups**: the Supabase free plan has no restorable backups. Before real data, upgrade to Pro (about $25/month) for daily backups.
 - **Lawyer** (Georgian personal data protection law) — to confirm:
   - privacy notice text and consent checkbox on the public booking form (Phase 10);

@@ -34,7 +34,16 @@ Easiest: reset the database password (Project Settings → Database) to one with
 - Redirect URLs: add `http://localhost:3000/**` and `http://localhost:3100/**`
   (later also `https://YOUR-APP.vercel.app/**`)
 
-**Authentication → Emails → Templates**
+**Authentication → Emails → Templates** — leave the standard templates for now (decided 2026-10-28).
+The app accepts Supabase's standard links:
+- invites land on `/auth/accept` (the browser reads the login from the link and stores it);
+- password resets land on `/auth/confirm?code=…` — this only works in the same browser where the
+  reset was requested.
+
+**Later, together with the email service:** switch to the Georgian/English templates below.
+They also lift the same-browser limit for password resets. When doing this, change the invite
+`redirectTo` in the code from `/auth/accept` to `/auth/confirm?next=/set-password`
+(`INVITE_LANDING_PATH` in `src/lib/routes.ts` and `scripts/make-admin.ts`).
 
 *Invite user* — subject: `მოწვევა ავტოპარკში / Invitation to Avtopark`
 ```html

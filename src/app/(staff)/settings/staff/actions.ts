@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireStaff } from "@/lib/auth";
 import { env } from "@/lib/env";
+import { INVITE_LANDING_PATH } from "@/lib/routes";
 import { success, type FormState } from "@/lib/form-state";
 import { assignableRoles, can, canManageMember, type Role } from "@/lib/permissions";
 import { rateLimit } from "@/lib/rate-limit";
@@ -47,7 +48,7 @@ export async function inviteStaff(_prev: FormState, form: FormData): Promise<For
 
   const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
     data: { full_name: fullName },
-    redirectTo: `${env.NEXT_PUBLIC_SITE_URL}/auth/confirm?next=/set-password`,
+    redirectTo: `${env.NEXT_PUBLIC_SITE_URL}${INVITE_LANDING_PATH}`,
   });
   if (inviteError || !invited.user) {
     console.error("invite failed", inviteError?.code);

@@ -48,7 +48,8 @@
     "passwordHint": "At least 10 characters.",
     "savePassword": "Save password",
     "passwordSaved": "Password saved.",
-    "linkInvalid": "This link is invalid or has expired. Request a new one.",
+    "signingIn": "Signing you in…",
+    "linkInvalid":"This link is invalid or has expired. Request a new one.",
     "noCompanyTitle": "No company",
     "noCompany": "Your account does not belong to a company yet. Ask the company owner to invite you."
   },

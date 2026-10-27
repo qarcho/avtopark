@@ -1,5 +1,8 @@
 // Pages anyone can open without logging in.
-const PUBLIC_PATHS = ["/login", "/forgot-password", "/auth/confirm", "/auth/error"];
+const PUBLIC_PATHS = ["/login", "/forgot-password", "/auth/confirm", "/auth/accept", "/auth/error"];
+
+/** Where invite emails send people (Supabase's standard template). */
+export const INVITE_LANDING_PATH = "/auth/accept";
 
 export function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
