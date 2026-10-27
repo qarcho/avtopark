@@ -2,27 +2,57 @@
 
 ## Decisions made by Giorgi
 
-- **2026-10-27 — Who creates companies:** for now only Giorgi creates new rental companies (invite only). Each company owner then invites their own staff. Public sign-up comes later, together with subscription billing.
+- **2026-10-27 — Who creates companies:** for now only Giorgi (platform admin) creates new rental companies. Each company owner then invites their own staff. Public sign-up comes later, together with subscription billing.
 
-## Done
+## Technical decisions (made by Claude, explained)
 
-- Read CLAUDE.md and the demo. Phase 1 plan agreed.
+- **Supabase client instead of Prisma**: works directly with the database security rules (RLS), so the protection is stronger.
+- **Supabase in Frankfurt** (closest to Georgia, data stays in the EU).
+- **Three roles**: owner, manager, operator. Owner = manager + can manage other owners. A company always keeps at least one owner.
+- **Platform admin cannot see companies' cars, customers or bookings** — only company names and staff counts. Better for privacy.
+- **Prices are frozen in each booking**: the daily rate and extras prices are copied in, so later price changes do not change existing bookings.
+- **Language is remembered per browser** (Georgian by default). Staff pages have no /ka or /en in the address.
 
-## Next — Phase 1 (Foundation)
+## Phase 1 — Foundation: built, waiting for Supabase keys to test against the real database
 
-Waiting on Giorgi:
+Done (code):
+- Next.js 16 project, Git, Tailwind with the demo's colors, light/dark mode, phone-first layout.
+- Database (`supabase/migrations/20261028000001_foundation.sql`): companies, staff, settings (default prices from the demo), locations (Tbilisi/Kutaisi/Batumi airports + office), cars, customers, bookings, booking segments, fines, audit log.
+- Security in the database itself:
+  - every company sees only its own data (row level security on every table);
+  - rows cannot point at another company's customer or car;
+  - operators cannot change prices/deposits, blacklist, change settings, manage staff, or delete;
+  - two bookings of the same car can never overlap (same-day turnover allowed; online requests block too; cancelled bookings free the car);
+  - audit log of money, fines and blacklist changes (who, when, what changed);
+  - login and password reset are rate-limited.
+- Login, forgot password, set password (from invite/reset emails), sign out.
+- Staff page (Settings → Staff): list, invite by email, change role, remove.
+- Admin page (/admin): create a company and invite its owner.
+- Georgian and English for every text.
+- Demo data script: "Demo Rent" with the demo's 10 cars, 26 bookings (incl. the car replacement and 2 online requests), blacklisted Rustam Kerimov, 4 fines.
+- Tests: 16 unit tests pass. 24 database security tests and 5 browser tests are written and will run once the keys are in `.env.local`.
 
-- [ ] Install Node.js (`winget install OpenJS.NodeJS.LTS`) and Git (`winget install Git.Git`), then restart the Claude app
-- [ ] GitHub account (send username)
-- [ ] Supabase account + project `avtopark-dev`, region Frankfurt (eu-central-1)
-- [ ] Vercel account (sign in with GitHub)
+Waiting on Giorgi (see docs/SETUP.md for exact clicks):
+- [ ] Fill in the four Supabase values in `.env.local`
+- [ ] Supabase dashboard: turn off public sign-up, set redirect URLs, paste the two email templates
+- [ ] GitHub username (to put the code online) and then connect Vercel
 
-Then: project setup, database + company separation (RLS) with tests, login + password reset, roles, staff invites, Georgian/English, phone-friendly layout, demo data.
+Then Claude will: apply the database, run all tests, load demo data, make Giorgi platform admin, deploy to Vercel.
+
+## Next — Phase 2 (Fleet)
+
+Vehicle list with status filters, add/edit vehicle, photos, service flag, reminders.
 
 ## Open questions for Giorgi
 
 - None right now.
 
-## To confirm with a lawyer before real customers use it
+## Before real customers use it
 
-- (Will be filled in as we build the customer documents and public booking site.)
+- **Email service**: Supabase's built-in email only reaches your own address. Before inviting real staff we need an email service (e.g. Resend, free up to 3,000 emails/month) and ideally your own domain for sending.
+- **Backups**: the Supabase free plan has no restorable backups. Before real data, upgrade to Pro (about $25/month) for daily backups.
+- **Lawyer** (Georgian personal data protection law) — to confirm:
+  - privacy notice text and consent checkbox on the public booking form (Phase 10);
+  - how long we keep passport/license copies, and deleting them on request;
+  - that storing data in the EU (Frankfurt) is fine for your customers;
+  - contract terms text (Phase 6).
