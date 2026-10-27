@@ -212,10 +212,10 @@ describe.skipIf(!hasDatabase)("roles: operator vs manager", () => {
       await tx`update public.bookings set deposit_amount = 450 where id = ${b.booking.id}`;
       await actAs(tx, a.manager);
       await tx`update public.bookings set deposit_amount = 400 where id = ${a.booking.id}`;
-      const rows = await tx`select organization_id, actor_id, changes from public.audit_log`;
+      const rows = await tx`select organization_id, actor_id, action, changes from public.audit_log`;
       expect(rows.length).toBeGreaterThan(0);
       expect(rows.every((r) => r.organization_id === a.org)).toBe(true);
-      const change = rows.find((r) => r.changes.deposit_amount);
+      const change = rows.find((r) => r.action === "UPDATE" && r.changes.deposit_amount);
       expect(change?.actor_id).toBe(a.manager);
       expect(change?.changes.deposit_amount).toEqual({ old: 300, new: 400 });
       await actAs(tx, a.operator);
@@ -297,6 +297,24 @@ describe.skipIf(!hasDatabase)("new company defaults", () => {
       expect(Number(s.deposit_offroad)).toBe(800);
       const locs = await tx`select name_en from public.locations where organization_id = ${org} order by sort_order`;
       expect(locs.map((l) => l.name_en)).toEqual(["Tbilisi Airport", "Kutaisi Airport", "Batumi Airport", "Tbilisi office"]);
+    });
+  });
+});
+
+describe.skipIf(!hasDatabase)("deleting a company", () => {
+  it("removes all its data, and only its data", async () => {
+    await inRollback(async (tx) => {
+      const { a, b } = await twoCompanies(tx);
+      await tx`update public.bookings set deposit_amount = 350 where id = ${a.booking.id}`;
+      await tx`insert into public.fines (organization_id, vehicle_id, occurred_at, violation, amount, booking_id)
+               values (${a.org}, ${a.vehicle}, now(), 'speeding', 50, ${a.booking.id})`;
+      await tx`delete from public.organizations where id = ${a.org}`;
+      for (const table of ["vehicles", "customers", "bookings", "booking_segments", "fines", "memberships", "audit_log"]) {
+        const [left] = await tx`select count(*)::int as n from ${tx("public." + table)} where organization_id = ${a.org}`;
+        expect(left.n, table).toBe(0);
+      }
+      const [other] = await tx`select count(*)::int as n from public.bookings where organization_id = ${b.org}`;
+      expect(other.n).toBe(1);
     });
   });
 });

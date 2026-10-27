@@ -123,6 +123,10 @@ async function main() {
       for (const u of USERS) {
         await tx`insert into public.memberships (organization_id, user_id, role) values (${orgId}, ${userIds[u.email]}, ${u.role})`;
       }
+      // Platform admins (Giorgi) also own the demo company, so one login shows everything.
+      await tx`insert into public.memberships (organization_id, user_id, role)
+               select ${orgId}, user_id, 'owner' from public.platform_admins
+               on conflict do nothing`;
 
       // 3. Locations were created by the database; map them to the demo's codes.
       const locs = await tx`select id, sort_order from public.locations where organization_id = ${orgId}`;

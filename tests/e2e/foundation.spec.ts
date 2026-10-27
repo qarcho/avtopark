@@ -27,7 +27,8 @@ test("wrong password shows one neutral message", async ({ page }) => {
   await page.getByLabel("Email").fill("demo-operator@avtopark.test");
   await page.getByLabel("Password").fill("not-the-password");
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page.getByRole("alert")).toHaveText("Wrong email or password.");
+  // Next.js has its own hidden role="alert" route announcer, so match by text.
+  await expect(page.getByRole("alert").filter({ hasText: "Wrong email or password." })).toBeVisible();
 });
 
 test("operator signs in, sees the company, and cannot manage staff", async ({ page }) => {
