@@ -1,0 +1,1382 @@
+<title>Avtopark</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+Georgian:wght@400;500;600;700;800&family=Barlow+Semi+Condensed:wght@600;700&display=swap">
+<style>
+/* Layout: sticky top bar with company views (Today / Fleet / Calendar / Customers / Fines) plus a public-site preview. */
+:root{
+  --bg:#F2F4F8; --surface:#FFFFFF; --sunk:#E9EDF3; --ink:#131925; --muted:#5A6476; --line:#DCE1E9;
+  --accent:#2347C8; --accent-soft:#E3E9FB; --accent-ink:#FFFFFF;
+  --ok:#17834A; --ok-soft:#E1F3E8; --warn:#A8670E; --warn-soft:#FBEED9; --info:#6B3FC4; --info-soft:#EEE7FB;
+  --bad:#C2362B; --bad-soft:#FBE4E1;
+  --past:#C9CFD9; --past-ink:#3D4656;
+  --hero:#102A6B; --hero-ink:#FFFFFF; --road:#F2C14E;
+  --font-body:"Manrope","Noto Sans Georgian",system-ui,sans-serif;
+  --font-plate:"Barlow Semi Condensed","Arial Narrow",sans-serif;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0D1118; --surface:#151B25; --sunk:#1B2330; --ink:#E5E9F0; --muted:#94A0B3; --line:#263041;
+  --accent:#7590FF; --accent-soft:#1F2A4D; --accent-ink:#0D1118;
+  --ok:#4CC27F; --ok-soft:#14301F; --warn:#E3A54A; --warn-soft:#352612; --info:#B497F5; --info-soft:#2A2042;
+  --bad:#F07167; --bad-soft:#3A1B1A;
+  --past:#323C4D; --past-ink:#C3CBD8; --hero:#0F1C3D; --hero-ink:#E8EDFF; --road:#E3B341; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0D1118; --surface:#151B25; --sunk:#1B2330; --ink:#E5E9F0; --muted:#94A0B3; --line:#263041;
+  --accent:#7590FF; --accent-soft:#1F2A4D; --accent-ink:#0D1118;
+  --ok:#4CC27F; --ok-soft:#14301F; --warn:#E3A54A; --warn-soft:#352612; --info:#B497F5; --info-soft:#2A2042;
+  --bad:#F07167; --bad-soft:#3A1B1A;
+  --past:#323C4D; --past-ink:#C3CBD8; --hero:#0F1C3D; --hero-ink:#E8EDFF; --road:#E3B341; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:14px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:12px;padding-block:10px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto}
+.logo{width:34px;height:34px;border-radius:8px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-family:var(--font-plate);font-weight:700;font-size:15px}
+.brand b{font-weight:800;font-size:16px;letter-spacing:-.01em;display:block;line-height:1.1}
+.brand small{color:var(--muted);font-size:12px}
+.demo-tag{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--warn);background:var(--warn-soft);padding:2px 7px;border-radius:4px;margin-left:4px;vertical-align:2px}
+.controls{display:flex;gap:8px;align-items:center}
+.role{border:1px solid var(--line);border-radius:7px;padding:4px 8px;font-size:12.5px;font-weight:600;background:var(--surface)}
+.lang{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.lang button{border:0;background:transparent;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;color:var(--muted)}
+.lang button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.navbar{border-top:1px solid var(--line)}
+nav.tabs{display:flex;gap:2px;overflow-x:auto;padding-block:6px;scrollbar-width:none}
+nav.tabs a{padding:6px 12px;border-radius:7px;text-decoration:none;color:var(--muted);font-weight:600;font-size:13.5px;white-space:nowrap;display:flex;align-items:center;gap:6px}
+nav.tabs a:hover{background:var(--sunk)}
+nav.tabs a[aria-current="page"]{background:var(--sunk);color:var(--ink)}
+nav.tabs a.site-link{margin-left:auto;border:1px solid var(--line)}
+nav.tabs .cnt{background:var(--bad);color:#fff;border-radius:999px;font-size:10.5px;padding:0 6px;font-weight:700}
+
+main{padding-block:22px 56px}
+.view-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+h1{font-size:24px;font-weight:800;letter-spacing:-.02em;margin:0;text-wrap:balance}
+.sub{color:var(--muted);margin:2px 0 0;max-width:65ch}
+h2{font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);padding:7px 13px;border-radius:8px;font-weight:600;font-size:13.5px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.sm{padding:4px 9px;font-size:12.5px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.danger{color:var(--bad);border-color:transparent;background:transparent}
+.btn.danger.armed{background:var(--bad);color:#fff}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--muted)}
+.btn svg{width:15px;height:15px}
+
+.plate{display:inline-flex;align-items:stretch;border:1.5px solid #131925;border-radius:4px;background:#fff;color:#111;font-family:var(--font-plate);font-weight:700;font-size:14px;line-height:1;overflow:hidden;white-space:nowrap;letter-spacing:.03em}
+.plate .strip{background:#1E40AF;color:#fff;font-size:8px;padding:3px 3px 0;display:flex;align-items:flex-end}
+.plate .num{padding:4px 6px}
+
+.pill{display:inline-flex;align-items:center;gap:6px;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.s-available,.s-paid,.s-returned,.s-done{color:var(--ok);background:var(--ok-soft)}
+.s-out,.s-active,.s-held,.s-charged{color:var(--accent);background:var(--accent-soft)}
+.s-service,.s-new,.s-upcoming{color:var(--warn);background:var(--warn-soft)}
+.s-returning,.s-leaving,.s-request{color:var(--info);background:var(--info-soft)}
+.s-black,.s-withheld,.s-unmatched{color:var(--bad);background:var(--bad-soft)}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:22px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+.stat .k{color:var(--muted);font-size:12px;font-weight:600}
+.stat .v{font-size:24px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:2px}
+.stat .v small{font-size:13px;color:var(--muted);font-weight:600}
+.meter{height:4px;background:var(--sunk);border-radius:2px;margin-top:8px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--accent)}
+
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+@media (max-width:760px){.cols{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;min-width:0}
+.panel.req{border-color:var(--info);margin-bottom:18px}
+.list{display:flex;flex-direction:column}
+.item{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:10px 4px;border-top:1px solid var(--line);cursor:pointer;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;width:100%}
+.item:first-child{border-top:0}
+.item:hover{background:var(--sunk)}
+.item .who{font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .meta{color:var(--muted);font-size:12.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .right{text-align:right;font-size:12.5px;color:var(--muted);white-space:nowrap}
+.item .right b{display:block;color:var(--ink);font-size:13.5px}
+.req-item{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:10px 4px;border-top:1px solid var(--line)}
+.req-item:first-child{border-top:0}
+.req-item .acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.empty{color:var(--muted);padding:18px 4px;font-size:13.5px}
+.date-chip{font-variant-numeric:tabular-nums;font-weight:700;font-size:12px;background:var(--sunk);padding:4px 8px;border-radius:6px;text-align:center;min-width:54px}
+.rem{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:9px 4px;border-top:1px solid var(--line);cursor:pointer;background:none;border-left:0;border-right:0;border-bottom:0;width:100%;text-align:left}
+.rem:first-child{border-top:0}
+.rem:hover{background:var(--sunk)}
+.rem .ic{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;font-size:13px;font-weight:800}
+.rem .ic.bad{background:var(--bad-soft);color:var(--bad)}
+.rem .ic.warn{background:var(--warn-soft);color:var(--warn)}
+
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.chip span{font-variant-numeric:tabular-nums;opacity:.7;margin-left:4px}
+.table{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-top:14px}
+.trow{display:grid;gap:14px;align-items:center;padding:11px 16px;border-top:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;cursor:pointer}
+.trow:hover{background:var(--sunk)}
+.trow.head{cursor:default;border-top:0;background:var(--sunk);font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-block:8px}
+.trow>*{min-width:0}
+.fleet .trow{grid-template-columns:110px minmax(0,1.6fr) minmax(0,.8fr) 100px 150px minmax(0,1.3fr)}
+.cust .trow{grid-template-columns:minmax(0,1.5fr) minmax(0,1.1fr) 70px 100px minmax(0,1fr) 130px}
+.fines .trow{grid-template-columns:96px 110px minmax(0,1.4fr) 80px minmax(0,1.3fr) 120px minmax(0,1fr);cursor:default}
+.fines .trow:hover{background:none}
+.car-name{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.car-spec{color:var(--muted);font-size:12.5px}
+.rate{font-variant-numeric:tabular-nums;font-weight:700}
+.rate small{color:var(--muted);font-weight:500}
+.next{color:var(--muted);font-size:12.5px}
+.warn-dot{color:var(--warn);font-weight:800;margin-left:4px}
+.num{font-variant-numeric:tabular-nums}
+.search-in{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 11px;min-width:220px}
+@media (max-width:860px){
+  .trow.head{display:none}
+  .fleet .trow{grid-template-columns:auto 1fr auto;grid-template-areas:"a b d" "e f f";row-gap:8px}
+  .fleet .c-plate{grid-area:a}.fleet .c-name{grid-area:b}.fleet .c-class{display:none}.fleet .c-rate{grid-area:d;text-align:right}.fleet .c-status{grid-area:e}.fleet .c-next{grid-area:f;text-align:right}
+  .cust .trow{grid-template-columns:1fr auto;row-gap:6px}
+  .cust .c-phone,.cust .c-n{display:none}
+  .fines .trow{grid-template-columns:1fr auto;row-gap:6px}
+}
+
+/* calendar */
+.cal-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.range{font-weight:700;font-variant-numeric:tabular-nums;min-width:150px;text-align:center}
+.hint{color:var(--muted);font-size:12.5px;margin:10px 0 0}
+.gantt{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);margin-top:12px}
+.g-grid{display:grid;grid-template-columns:var(--label) calc(var(--cell) * var(--n));width:max-content;min-width:100%}
+.g-label{position:sticky;left:0;z-index:2;background:var(--surface);border-right:1px solid var(--line);border-top:1px solid var(--line);padding:6px 10px;display:flex;flex-direction:column;justify-content:center;gap:3px;min-width:0}
+.g-label .car-name{font-size:12.5px}
+.g-head{display:grid;grid-template-columns:repeat(var(--n),var(--cell))}
+.g-head div{text-align:center;padding:6px 0;font-size:11px;color:var(--muted);font-weight:600;line-height:1.2;font-variant-numeric:tabular-nums}
+.g-head div b{display:block;font-size:14px;color:var(--ink)}
+.g-head div.we{background:var(--sunk)}
+.g-head div.td b{color:var(--accent-ink);background:var(--accent);border-radius:6px;display:inline-block;padding:1px 6px}
+.g-label.corner{border-top:0;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.g-track{position:relative;height:50px;border-top:1px solid var(--line);cursor:copy}
+.g-cells{position:absolute;inset:0;display:grid;grid-template-columns:repeat(var(--n),var(--cell));pointer-events:none}
+.g-cells div{border-right:1px solid var(--line)}
+.g-cells div.we{background:color-mix(in srgb,var(--sunk) 70%,transparent)}
+.g-cells div.td{background:color-mix(in srgb,var(--accent) 9%,transparent)}
+.g-track.service{background:repeating-linear-gradient(135deg,transparent 0 8px,color-mix(in srgb,var(--warn) 12%,transparent) 8px 16px);cursor:not-allowed}
+.bar{position:absolute;top:8px;bottom:8px;border-radius:6px;border:0;padding:0 8px;font-size:12px;font-weight:700;text-align:left;overflow:hidden;white-space:nowrap;cursor:pointer;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center}
+.bar.future{background:var(--accent-soft);color:var(--accent);box-shadow:inset 0 0 0 1.5px var(--accent)}
+.bar.past{background:var(--past);color:var(--past-ink)}
+.bar.request{background:repeating-linear-gradient(135deg,var(--info-soft) 0 6px,color-mix(in srgb,var(--info) 22%,var(--info-soft)) 6px 12px);color:var(--info);box-shadow:inset 0 0 0 1.5px var(--info)}
+.bar.cut-l{border-top-left-radius:0;border-bottom-left-radius:0}
+.bar.cut-r{border-top-right-radius:0;border-bottom-right-radius:0}
+.bar span{overflow:hidden;text-overflow:ellipsis}
+.legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin-top:10px}
+.legend i{display:inline-block;width:14px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+
+/* dialogs */
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);padding:0;width:min(560px,calc(100vw - 32px));max-height:calc(100dvh - 32px)}
+dialog.wide{width:min(860px,calc(100vw - 32px))}
+dialog::backdrop{background:rgba(10,14,22,.5)}
+.dlg-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:16px 18px 8px}
+.dlg-head h3{margin:0;font-size:17px;font-weight:800}
+.dlg-head .badges{display:flex;gap:6px;margin-right:auto;flex-wrap:wrap}
+.dtabs{display:flex;gap:2px;padding:0 18px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.dtabs button{border:0;background:none;padding:10px;font-weight:700;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;display:flex;gap:6px;align-items:center}
+.dtabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.dtabs button:disabled{opacity:.4;cursor:not-allowed}
+.dtabs .tick{color:var(--ok)}
+.pane{padding:16px 18px 18px}
+form.fm,.fm{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+form.fm.padded{padding:8px 18px 18px}
+.fld{display:flex;flex-direction:column;gap:4px;min-width:0}
+.fld.full{grid-column:1/-1}
+.fld label,.lbl{font-size:12px;font-weight:700;color:var(--muted)}
+.fld input,.fld select,.fld textarea{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 10px;width:100%}
+.fld input:disabled{opacity:.6}
+.check{display:flex;align-items:center;gap:8px;font-weight:600}
+.check.full{grid-column:1/-1}
+.extras{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.extra{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;cursor:pointer}
+.extra:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.extra .p{margin-left:auto;color:var(--muted);font-size:12.5px;white-space:nowrap}
+.extra select{border:1px solid var(--line);border-radius:6px;padding:2px 4px;background:var(--surface)}
+@media (max-width:520px){.extras{grid-template-columns:1fr}}
+.summary{grid-column:1/-1;background:var(--sunk);border-radius:8px;padding:10px 12px;font-variant-numeric:tabular-nums;display:flex;flex-direction:column;gap:3px}
+.summary .ln{display:flex;justify-content:space-between;gap:10px;font-size:13px}
+.summary .ln span:first-child{color:var(--muted)}
+.summary .tot{display:flex;justify-content:space-between;border-top:1px solid var(--line);padding-top:6px;margin-top:3px;font-weight:800;font-size:16px}
+.summary .dep{font-size:12.5px;color:var(--muted)}
+.err{grid-column:1/-1;color:var(--bad);font-weight:600;font-size:13px;background:var(--bad-soft);padding:8px 10px;border-radius:8px}
+.info-box{grid-column:1/-1;color:var(--muted);font-size:12.5px;background:var(--sunk);padding:8px 10px;border-radius:8px}
+.actions{grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end;align-items:center;margin-top:4px;flex-wrap:wrap}
+.actions .spacer{margin-right:auto}
+@media (max-width:480px){form.fm,.fm{grid-template-columns:1fr}}
+
+/* inspection */
+.insp{display:grid;grid-template-columns:230px 1fr;gap:20px}
+@media (max-width:640px){.insp{grid-template-columns:1fr}}
+.diagram{width:100%;max-width:230px;display:block;background:var(--sunk);border-radius:10px;cursor:crosshair;margin:0 auto}
+.dmg-types{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px}
+.dmg-types button{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:3px 8px;font-size:12px;font-weight:700;cursor:pointer}
+.dmg-types button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.side{display:flex;flex-direction:column;gap:14px;min-width:0}
+.fuel{display:flex;gap:3px}
+.fuel button{flex:1;height:28px;border:1px solid var(--line);background:var(--surface);border-radius:4px;cursor:pointer;padding:0}
+.fuel button.on{background:var(--ok);border-color:var(--ok)}
+.fuel-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:2px}
+.dmg-list{display:flex;flex-direction:column;gap:4px;font-size:13px}
+.dmg-list div{display:flex;align-items:center;gap:8px}
+.dmg-list .mk{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:10.5px;font-weight:800;color:#fff;background:var(--bad);flex:none}
+.dmg-list .mk.old{background:var(--past);color:var(--past-ink)}
+.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:6px}
+.photos figure{margin:0;position:relative}
+.photos img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px;display:block}
+.photos button{position:absolute;top:3px;right:3px;border:0;border-radius:50%;width:20px;height:20px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;cursor:pointer;padding:0}
+.file-btn{display:inline-flex;align-items:center;gap:6px;border:1px dashed var(--muted);border-radius:8px;padding:8px 12px;font-weight:600;font-size:13px;cursor:pointer;color:var(--muted)}
+.file-btn input{position:absolute;width:1px;height:1px;opacity:0}
+.file-btn:focus-within{outline:2px solid var(--accent)}
+.cmp{background:var(--sunk);border-radius:8px;padding:10px 12px;display:grid;gap:4px;font-size:13px}
+.cmp .ln{display:flex;justify-content:space-between;gap:10px}
+.t-warn{color:var(--warn);font-weight:700}
+.t-bad{color:var(--bad);font-weight:700}
+.t-ok{color:var(--ok);font-weight:700}
+.stamp{font-size:12px;color:var(--muted)}
+.seg{display:flex;gap:4px;flex-wrap:wrap}
+.seg button{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:4px 9px;font-size:12.5px;font-weight:700;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.insp .wide{grid-column:1/-1;min-width:0}
+.shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+.shot{border:1px solid var(--line);border-radius:8px;padding:7px;display:flex;flex-direction:column;gap:5px;min-width:0}
+.shot .nm{font-size:12px;font-weight:700}
+.shot .pair{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.shot .pair.one{grid-template-columns:1fr}
+.shot .box{aspect-ratio:4/3;border-radius:5px;background:var(--sunk);display:grid;place-items:center;overflow:hidden;position:relative;font-size:11.5px;color:var(--muted);text-align:center;font-weight:600}
+.shot .box img{width:100%;height:100%;object-fit:cover;display:block}
+.shot label.box{cursor:pointer;border:1px dashed var(--muted)}
+.shot label.box:focus-within{outline:2px solid var(--accent)}
+.shot .box input{position:absolute;opacity:0;width:1px;height:1px}
+.shot .rm{position:absolute;top:3px;right:3px;border:0;border-radius:50%;width:20px;height:20px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;cursor:pointer;padding:0}
+.shot .cap{font-size:10.5px;color:var(--muted)}
+.cmp input{width:100px;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:4px 6px;text-align:right}
+.cmp .ln{align-items:center}
+
+/* contract (paper stays white in both themes, like a printed sheet) */
+.paper{background:#FFFFFF;color:#1A1A1A;border:1px solid var(--line);border-radius:8px;padding:24px 26px;font-size:13px;line-height:1.65;max-height:50vh;overflow:auto}
+.paper h4{margin:0 0 2px;font-size:16px;text-align:center}
+.paper .no{text-align:center;color:#555;font-size:12px;margin-bottom:14px}
+.paper table{width:100%;border-collapse:collapse;margin:8px 0;font-variant-numeric:tabular-nums}
+.paper td{border-bottom:1px solid #E2E2E2;padding:4px 0}
+.paper td:last-child{text-align:right}
+.paper ol{padding-left:18px;margin:6px 0}
+.paper .sigs{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px}
+.paper .sigs div{border-top:1px solid #999;padding-top:4px;font-size:12px;color:#555;min-height:70px;position:relative}
+.paper .sigs img{position:absolute;bottom:22px;left:0;height:56px}
+.sigpad{margin-top:14px}
+.sigpad canvas{width:100%;height:140px;background:#FFFFFF;border:1.5px dashed var(--muted);border-radius:8px;touch-action:none;display:block;cursor:crosshair}
+.sigpad .row{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:8px;flex-wrap:wrap}
+
+.doc-up{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.doc-card{border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.doc-card img{width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:6px}
+.doc-card .ph{aspect-ratio:3/2;border-radius:6px;background:var(--sunk);display:grid;place-items:center;color:var(--muted);font-size:12px}
+.hist{grid-column:1/-1}
+@media (max-width:480px){.doc-up{grid-template-columns:1fr}}
+
+/* public site preview */
+.site-frame{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
+.site-bar{display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--sunk);font-size:12px;color:var(--muted);border-bottom:1px solid var(--line)}
+.site-bar .dots{display:flex;gap:5px}
+.site-bar .dots i{width:9px;height:9px;border-radius:50%;background:var(--line)}
+.site-bar .url{background:var(--surface);border-radius:6px;padding:3px 10px;flex:1;max-width:340px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.site-top{display:flex;align-items:center;gap:12px;padding:14px 22px;flex-wrap:wrap}
+.site-top b{font-size:18px;font-weight:800;letter-spacing:-.02em}
+.site-top .cities{color:var(--muted);font-size:12.5px;margin-right:auto}
+.site-top select{border:1px solid var(--line);border-radius:7px;padding:4px 8px;background:var(--surface);font-weight:600}
+.hero{background:var(--hero);color:var(--hero-ink);padding:34px 22px 30px;position:relative}
+.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:repeating-linear-gradient(90deg,var(--road) 0 30px,transparent 30px 56px)}
+.hero h2{font-size:clamp(24px,4vw,34px);color:var(--hero-ink);text-transform:none;letter-spacing:-.02em;font-weight:800;margin:0 0 6px;text-wrap:balance;max-width:22ch}
+.hero p{margin:0;opacity:.85;max-width:60ch}
+.search{display:grid;grid-template-columns:1.3fr 1fr 1fr auto;gap:10px;background:var(--surface);color:var(--ink);padding:12px;border-radius:12px;margin-top:20px;align-items:end}
+.search .btn{height:38px}
+@media (max-width:720px){.search{grid-template-columns:1fr 1fr}.search .loc,.search .btn{grid-column:1/-1;justify-content:center}}
+.site-sec{padding:24px 22px;border-top:1px solid var(--line)}
+.site-sec h3{margin:0 0 12px;font-size:18px;font-weight:800;letter-spacing:-.01em}
+.cars-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin-top:14px}
+.car-card{border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.car-card .art{background:var(--sunk);border-radius:8px;aspect-ratio:240/110;overflow:hidden;display:grid;place-items:center}
+.car-card .art img{width:100%;height:100%;object-fit:cover}
+.car-card .art svg{width:100%;height:100%}
+.car-card .tag{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.car-card h4{margin:0;font-size:16px;font-weight:800}
+.car-card .specs{color:var(--muted);font-size:12.5px;display:flex;gap:10px;flex-wrap:wrap}
+.car-card .pr{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;margin-top:auto;padding-top:6px}
+.car-card .pr b{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
+.car-card .pr small{color:var(--muted);font-size:12px;display:block}
+.car-card.na{opacity:.55}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.step{background:var(--sunk);border-radius:10px;padding:14px}
+.step .n{font-family:var(--font-plate);font-weight:700;font-size:22px;color:var(--accent)}
+.step b{display:block;margin:2px 0 4px}
+.step p{margin:0;color:var(--muted);font-size:13px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.two ul,.rules ul{margin:0;padding-left:18px;display:grid;gap:6px;max-width:65ch}
+@media (max-width:720px){.steps,.two{grid-template-columns:1fr}}
+.rules-note{font-size:12px;color:var(--warn);margin-top:12px}
+.ok-screen{text-align:center;padding:30px 20px}
+.ok-screen .big{width:56px;height:56px;border-radius:50%;background:var(--ok-soft);color:var(--ok);display:grid;place-items:center;margin:0 auto 10px;font-size:26px;font-weight:800}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:9px 16px;border-radius:8px;font-weight:600;font-size:13.5px;z-index:20;max-width:calc(100vw - 32px)}
+.note{color:var(--muted);font-size:12px;margin-top:28px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+[data-role="operator"] .mgr-only{display:none!important}
+@media (prefers-reduced-motion:no-preference){.bar,.item,.trow{transition:background-color .12s}}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <div class="logo">GE</div>
+      <div><b data-t="brand"></b><small data-t="tagline"></small> <span class="demo-tag" data-t="demo"></span></div>
+    </div>
+    <div class="controls">
+      <select class="role" id="role" aria-label="Role">
+        <option value="manager" data-t="role_manager"></option>
+        <option value="operator" data-t="role_operator"></option>
+      </select>
+      <div class="lang" role="group" aria-label="Language">
+        <button id="lang-ka" type="button" data-lang="ka">ქარ</button>
+        <button id="lang-en" type="button" data-lang="en">ENG</button>
+      </div>
+    </div>
+  </div>
+  <div class="navbar"><div class="wrap"><nav class="tabs" id="nav" aria-label="Views"></nav></div></div>
+</header>
+
+<main class="wrap">
+  <section id="v-today"></section>
+  <section id="v-fleet" hidden></section>
+  <section id="v-calendar" hidden></section>
+  <section id="v-customers" hidden></section>
+  <section id="v-fines" hidden></section>
+  <section id="v-site" hidden></section>
+  <p class="note"><span data-t="demo_note"></span> <button class="btn ghost" id="reset" type="button" data-t="reset"></button></p>
+</main>
+
+<dialog id="dlg-bk" class="wide">
+  <div class="dlg-head"><h3 id="bk-title"></h3><div class="badges" id="bk-badges"></div><button class="btn ghost" type="button" data-close aria-label="Close">✕</button></div>
+  <div class="dtabs" id="bk-tabs" role="tablist"></div>
+  <div id="bk-body"></div>
+</dialog>
+
+<dialog id="dlg-car">
+  <div class="dlg-head"><h3 id="car-title"></h3><button class="btn ghost" type="button" data-close aria-label="Close">✕</button></div>
+  <div id="car-body"></div>
+</dialog>
+
+<dialog id="dlg-cust">
+  <div class="dlg-head"><h3 id="cust-title"></h3><button class="btn ghost" type="button" data-close aria-label="Close">✕</button></div>
+  <div id="cust-body"></div>
+</dialog>
+
+<dialog id="dlg-fine">
+  <div class="dlg-head"><h3 data-t="fine_new"></h3><button class="btn ghost" type="button" data-close aria-label="Close">✕</button></div>
+  <div id="fine-body"></div>
+</dialog>
+
+<dialog id="dlg-site" class="wide">
+  <div class="dlg-head"><h3 id="site-title"></h3><button class="btn ghost" type="button" data-close aria-label="Close">✕</button></div>
+  <div id="site-body"></div>
+</dialog>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const T = {
+ka:{brand:"ავტოპარკი",tagline:"გაქირავების მართვა",demo:"დემო",role_manager:"მენეჯერი",role_operator:"ოპერატორი",
+nav_today:"დღეს",nav_fleet:"ფლიტი",nav_cal:"კალენდარი",nav_cust:"კლიენტები",nav_fines:"ჯარიმები",nav_site:"კლიენტის საიტი",
+reset:"დემო მონაცემების აღდგენა",demo_note:"ეს სადემონსტრაციო ვერსიაა. ცვლილებები მხოლოდ შენს ბრაუზერში ინახება.",
+today_title:"დღევანდელი დაფა",st_cars:"ავტოპარკი",st_lot:"ადგილზე",st_out:"გაქირავებაში",st_service:"სერვისზე",st_util:"დატვირთვა, თვე",st_rev:"შემოსავალი, თვე",st_dep:"დაკავებული დეპოზიტი",
+requests:"ონლაინ მოთხოვნები",approve:"დადასტურება",decline:"უარყოფა",open:"გახსნა",docs_ok:"დოკუმენტები ატვირთულია",docs_no:"დოკუმენტები არ არის",
+pickups:"გაცემა დღეს",returns:"დაბრუნება დღეს",no_pickups:"დღეს გასაცემი მანქანა არ არის.",no_returns:"დღეს დასაბრუნებელი მანქანა არ არის.",upcoming:"გაცემები მომდევნო 7 დღეში",no_upcoming:"მომდევნო კვირაში ჯავშანი არ არის.",
+reminders:"შეხსენებები",no_reminders:"ყველაფერი რიგზეა.",r_oil_over:"ზეთის შეცვლა გადაცილებულია {n} კმ-ით",r_oil_soon:"ზეთის შეცვლამდე {n} კმ",r_ins_over:"დაზღვევა ამოიწურა {d}",r_ins_soon:"დაზღვევა იწურება {d}",r_insp_over:"ტექდათვალიერების ვადა გავიდა {d}",r_insp_soon:"ტექდათვალიერება {d}-მდე",
+s_available:"თავისუფალი",s_out:"გაქირავებული",s_service:"სერვისზე",s_returning:"ბრუნდება დღეს",s_leaving:"გადის დღეს",
+bs_request:"ონლაინ მოთხოვნა",bs_upcoming:"მომავალი",bs_active:"მიმდინარე",bs_done:"დასრულებული",src_online:"საიტიდან",
+fleet_title:"ავტოპარკი",fleet_sub:"{n} მანქანა",all:"ყველა",add_car:"მანქანის დამატება",new_booking:"ახალი ჯავშანი",
+h_plate:"ნომერი",h_car:"მანქანა",h_class:"კლასი",h_rate:"ფასი",h_status:"სტატუსი",h_next:"შემდეგი",
+per_day:"/დღე",next_back:"ბრუნდება {d}",next_bk:"ჯავშანი {d}-დან",next_none:"ჯავშანი არ არის",
+cal_title:"ჯავშნების კალენდარი",prev:"წინა",next:"შემდეგი",today_btn:"დღეს",cal_hint:"დააჭირე ცარიელ უჯრას, რომ იმ დღიდან ჯავშანი შექმნა.",h_fleet:"მანქანა",
+lg_active:"მიმდინარე",lg_future:"მომავალი",lg_past:"დასრულებული",lg_request:"ონლაინ მოთხოვნა",lg_service:"სერვისზე",
+tab_details:"დეტალები",tab_out:"გაცემა",tab_in:"დაბრუნება",tab_contract:"ხელშეკრულება",
+bk_new:"ახალი ჯავშანი",bk_edit:"ჯავშანი",car_new:"მანქანის დამატება",car_edit:"მანქანის რედაქტირება",
+f_car:"მანქანა",f_customer:"კლიენტი",f_phone:"ტელეფონი",f_email:"ელფოსტა",f_country:"ქვეყანა",f_loc:"გაცემის ადგილი",f_start:"გაცემის თარიღი",f_end:"დაბრუნების თარიღი",f_note:"შენიშვნა",f_deposit:"დეპოზიტი, ₾",f_hotel:"სასტუმროს მისამართი",
+f_plate:"სახელმწიფო ნომერი",f_year:"გამოშვების წელი",f_make:"მარკა",f_model:"მოდელი",f_class:"კლასი",f_rate:"დღიური ფასი, ₾",f_trans:"გადაცემათა კოლოფი",f_fuel:"საწვავი",f_service:"მანქანა სერვისზეა",
+f_km:"გარბენი, კმ",f_oil_km:"ბოლო ზეთის შეცვლა, კმ",f_oil_every:"ზეთის შეცვლის ინტერვალი, კმ",f_ins:"დაზღვევა მოქმედებს",f_insp:"ტექდათვალიერება მოქმედებს",f_color:"ფერი",f_photo:"ფოტო საიტისთვის",upload_photo:"ფოტოს ატვირთვა",remove:"წაშლა",
+extras:"დამატებითი სერვისები",x_driver:"დამატებითი მძღოლი",x_seat:"ბავშვის სავარძელი",x_ins:"სრული დაზღვევა",x_ins_d:"ფრანშიზა 0 ₾",x_delivery:"მიტანა სასტუმროში",p_rent:"ქირა",per_day_short:"დღეში",flat:"ერთჯერადად",
+days:"{n} დღე",total:"ჯამი",deposit_l:"დეპოზიტი (ბრუნდება)",save:"შენახვა",cancel:"გაუქმება",delete:"წაშლა",confirm:"დიახ, წაშალე",
+e_dates:"დაბრუნების თარიღი გაცემის თარიღის შემდეგ უნდა იყოს.",e_name:"ჩაწერე კლიენტის სახელი.",e_overlap:"ეს მანქანა უკვე დაჯავშნილია: {who}, {a} – {b}. აირჩიე სხვა თარიღები ან მანქანა.",e_service:"მანქანა სერვისზეა. ჯერ სერვისის სტატუსი მოხსენი.",e_car:"შეავსე ნომერი, მარკა, მოდელი და ფასი.",e_black:"ეს კლიენტი შავ სიაშია: „{r}“. თუ მაინც გინდა შენახვა, კიდევ ერთხელ დააჭირე.",e_storage:"ბრაუზერის მეხსიერება გაივსო. წაშალე ზოგიერთი ფოტო.",e_terms:"დაეთანხმე ქირავნობის პირობებს.",e_contact:"ჩაწერე სახელი და ტელეფონი.",
+t_saved:"შენახულია",t_deleted:"წაიშალა",t_reset:"დემო მონაცემები აღდგენილია",t_approved:"ჯავშანი დადასტურდა",t_declined:"მოთხოვნა უარყოფილია",t_out:"გაცემა დაფიქსირდა",t_in:"დაბრუნება დაფიქსირდა",t_signed:"ხელმოწერა შენახულია",t_charged:"ჯარიმა კლიენტზე გადაფორმდა",
+out_first:"დაბრუნების ფორმა გაცემის შემდეგ გაიხსნება.",dmg_hint:"დააჭირე სქემაზე დაზიანების მოსანიშნად. მონიშნულ წერტილზე დაჭერა მას წაშლის.",front:"წინ",rear:"უკან",
+dm_scratch:"ნაკაწრი",dm_dent:"ჩაზნექილობა",dm_crack:"ბზარი",dm_chip:"საღებავის ნატეხი",dmg_none:"დაზიანება არ არის მონიშნული.",dmg_old:"გაცემისას უკვე იყო",dmg_new:"ახალი",
+fuel_l:"საწვავი",fuel_e:"ცარიელი",fuel_f:"სავსე",photos:"ფოტოები",add_photos:"ფოტოების დამატება",
+save_out:"გაცემის დაფიქსირება",save_in:"დაბრუნების დაფიქსირება",recorded:"დაფიქსირდა {d}",
+cmp_title:"შედარება გაცემასთან",cmp_km:"გავლილი მანძილი",cmp_fuel:"საწვავი",cmp_fuel_less:"{n}/8-ით ნაკლები",cmp_fuel_ok:"რიგზეა",cmp_dmg:"ახალი დაზიანებები",
+dep_title:"დეპოზიტი",dep_return:"სრულად დაბრუნება",dep_withhold:"ნაწილის დაკავება",dep_amount:"დასაკავებელი თანხა, ₾",
+dep_none:"არ არის აღებული",dep_held:"დაკავებულია",dep_returned:"დაბრუნებულია",dep_withheld:"დაკავდა {a}",
+c_title:"ავტომობილის ქირავნობის ხელშეკრულება",c_no:"№ {n} · {d}",c_company:"გამქირავებელი",c_client:"დამქირავებელი",c_vehicle:"ავტომობილი",c_period:"ქირავნობის პერიოდი",c_place:"გაცემის ადგილი",
+c_terms:"პირობები",c_t1:"ავტომობილი ბრუნდება იმავე რაოდენობის საწვავით, რაც გაცემისას ჰქონდა. ყოველი ნაკლები 1/8 ღირს ₾25.",c_t2:"ქირავნობის პერიოდში მიღებული საჯარიმო ქვითრები დამქირავებელს ეკისრება.",c_t3:"დაზიანება, რომელსაც დაზღვევა არ ფარავს, დეპოზიტიდან ანაზღაურდება.",c_t4:"საქართველოს ფარგლებს გარეთ გასვლა დასაშვებია მხოლოდ გამქირავებლის წერილობითი თანხმობით.",c_t5:"ერთ საათზე მეტი დაგვიანება დამატებით დღედ ითვლება.",
+c_sign_co:"გამქირავებლის ხელმოწერა",c_sign_cl:"დამქირავებლის ხელმოწერა",sig_title:"კლიენტის ხელმოწერა",sig_hint:"კლიენტი აქ აწერს ხელს თითით ან მაუსით.",sig_clear:"გასუფთავება",sig_save:"ხელმოწერის შენახვა",signed:"ხელმოწერილია",unsigned:"ხელმოუწერელი",
+c_note:"რეალურ ვერსიაში ხელშეკრულება PDF-ად ჩამოიტვირთება და კლიენტს ელფოსტით გაეგზავნება.",
+cust_title:"კლიენტები",cust_sub:"{n} კლიენტი",cust_search:"ძებნა სახელით ან ტელეფონით",h_name:"სახელი",h_bookings:"ჯავშნები",h_spent:"გადახდილი",h_docs:"დოკუმენტები",h_flag:"სტატუსი",
+cust_edit:"კლიენტის ბარათი",doc_license:"მართვის მოწმობა",doc_passport:"პასპორტი",verified:"შემოწმებულია",not_uploaded:"არ არის ატვირთული",
+black:"შავ სიაში",black_set:"შავ სიაში დამატება",black_reason:"მიზეზი",history:"ქირაობის ისტორია",no_history:"ჯავშნები ჯერ არ აქვს.",
+fines_title:"ჯარიმები",fines_sub:"ჯარიმა მანქანის ნომერზე მოდის. სისტემა თარიღით პოულობს, ვინ მართავდა მაშინ მანქანას.",fine_new:"ჯარიმის დამატება",
+h_when:"დრო",h_what:"დარღვევა",h_amount:"თანხა",h_driver:"დამქირავებელი",
+fn_speed:"სიჩქარის გადაჭარბება",fn_parking:"არასწორი პარკირება",fn_lane:"ზოლის დარღვევა",fn_red:"წითელ შუქზე გავლა",
+fs_new:"ახალი",fs_charged:"კლიენტზე გადაფორმებული",fs_paid:"გადახდილი",fn_unmatched:"ამ დროს ქირაში არ იყო",
+charge:"კლიენტზე გადაფორმება",mark_paid:"გადახდილია",f_date:"თარიღი",f_time:"დრო",f_place:"ადგილი",f_type:"დარღვევა",f_amount:"თანხა, ₾",fine_match:"დამქირავებელი: {who}",fine_nomatch:"ამ თარიღზე მანქანა ქირაში არ იყო.",
+site_cities:"თბილისი · ქუთაისი · ბათუმი",site_h:"იქირავე მანქანა საქართველოში 5 წუთში",site_p:"სრული ფასი თავიდანვე, დამალული გადასახადების გარეშე. დოკუმენტები ონლაინ ატვირთე და მანქანა დახლთან რიგის გარეშე აიყვანე.",
+site_search:"ძებნა",site_avail:"{n} მანქანა თავისუფალია შენს თარიღებზე",site_book:"დაჯავშნა",site_na:"ამ თარიღებში დაკავებულია",site_total:"{n} დღე სულ",site_dep:"დეპოზიტი {a}",cur_note:"ფასი ლარშია; სხვა ვალუტა მიახლოებითია",
+how:"როგორ მუშაობს",how1:"აირჩიე მანქანა",how1d:"თარიღები, ადგილი და დამატებითი სერვისები. ფასი მაშინვე სრულად ჩანს.",how2:"ონლაინ check-in",how2d:"მართვის მოწმობა და პასპორტი წინასწარ ატვირთე.",how3:"აიყვანე მანქანა",how3d:"ხელშეკრულებას ადგილზე აწერ ხელს და 5 წუთში მიდიხარ.",
+req_t:"მოთხოვნები",req1:"ასაკი 21 წლიდან",req2:"მართვის სტაჟი მინიმუმ 2 წელი",req3:"პასპორტი ან პირადობის მოწმობა",req4:"დეპოზიტი ბარათზე, ბრუნდება დაბრუნებისას",req5:"საერთაშორისო მართვის მოწმობა რეკომენდებულია",
+incl_t:"ფასში შედის",incl1:"სავალდებულო დაზღვევა",incl2:"შეუზღუდავი გარბენი",incl3:"24/7 დახმარება გზაზე",incl4:"უფასო გაუქმება გაცემამდე 48 საათით ადრე",
+rules_t:"მართვის წესები საქართველოში",
+rules:["მოძრაობა მარჯვენა მხარესაა.","სიჩქარის ლიმიტი, თუ ნიშანი სხვას არ მიუთითებს: დასახლებულ პუნქტში 60 კმ/სთ, მის გარეთ 90 კმ/სთ, ავტომაგისტრალზე 110 კმ/სთ.","უსაფრთხოების ღვედი სავალდებულოა ყველა მგზავრისთვის.","ტელეფონით საუბარი მხოლოდ handsfree-თ.","ალკოჰოლის დასაშვები ზღვარი ძალიან დაბალია. დალევის შემდეგ საჭესთან ნუ დაჯდები.","სიჩქარის და მოძრაობის კამერები ბევრგანაა. ჯარიმა მანქანის ნომერზე მოდის და კომპანია მას დამქირავებელზე გადააფორმებს.","ზამთარში გუდაურის და ჯვრის უღელტეხილი შეიძლება დროებით დაიკეტოს ან ჯაჭვები მოითხოვოს. გზაზე გასვლამდე გზების მდგომარეობა გადაამოწმე.","სოფლებში და ღამით გზაზე ხშირად შინაური ცხოველები გამოდიან."],
+rules_note:"სადემონსტრაციო ტექსტია. გამოქვეყნებამდე მოქმედ კანონმდებლობასთან გადაამოწმე.",
+sb_title:"დაჯავშნა",sb_contact:"შენი მონაცემები",sb_checkin:"ონლაინ check-in (არასავალდებულო)",sb_checkin_d:"დოკუმენტების წინასწარ ატვირთვით დახლთან დროს დაზოგავ.",sb_terms:"ვეთანხმები ქირავნობის პირობებს და მოთხოვნებს",sb_send:"ჯავშნის მოთხოვნის გაგზავნა",
+sb_ok:"მოთხოვნა მიღებულია",sb_ok_d:"ჯავშანი {n}. კომპანია მას დაადასტურებს და დაგიკავშირდება. დემოში მოთხოვნა უკვე ჩანს „დღეს“ ეკრანზე.",sb_back:"საიტზე დაბრუნება",sb_see:"კომპანიის მხარეს ნახვა",
+tab_swap:"მანქანის შეცვლა",clean_l:"სისუფთავე",cl_1:"სუფთა",cl_2:"ნორმალური",cl_3:"ჭუჭყიანი",cl_4:"ძალიან ჭუჭყიანი",
+charges:"დამატებითი გადასახადები",fee_fuel:"საწვავი: {n}/8 × {f}",fee_clean:"დასუფთავება ({l})",dmg_fee:"დაზიანების ანაზღაურება, ₾",charges_total:"სულ გადასახდელი",dep_back:"კლიენტს უბრუნდება",over_dep:"გადასახადი დეპოზიტს {a}-ით აჭარბებს. სხვაობა კლიენტს ცალკე უნდა გადაახდევინო.",
+shots_t:"ფოტოები კუთხეების მიხედვით",sh_front:"წინიდან",sh_rear:"უკნიდან",sh_left:"მარცხენა მხარე",sh_right:"მარჯვენა მხარე",sh_interior:"სალონი",sh_dash:"დაფა: გარბენი და საწვავი",at_pickup:"გაცემისას",at_return:"დაბრუნებისას",add_shot:"+ ფოტო",extra_photos:"სხვა ფოტოები",
+swap_title:"მანქანის შეცვლა ქირაობის დროს",swap_d:"თუ მანქანა გზაში გაფუჭდა ან ავარიაში მოყვა, კლიენტს სხვა მანქანას აძლევ. ჯავშანი და ფასი იგივე რჩება, კალენდარში კი ორივე მანქანა სწორ დღეებზე ჩანს.",
+swap_date:"შეცვლის თარიღი",swap_reason:"მიზეზი",sr_breakdown:"გაფუჭება",sr_accident:"ავარია",sr_request:"კლიენტის თხოვნა",sr_other:"სხვა",swap_old:"დაბრუნებული მანქანა",swap_new:"ახალი მანქანა",swap_service:"ძველი მანქანა სერვისზე გადავიდეს",swap_btn:"მანქანის შეცვლა",swap_none:"ამ თარიღებზე თავისუფალი მანქანა არ არის.",swap_short:"ქირაობის ბოლო დღეა, შეცვლა ვეღარ მოხერხდება.",swap_hist:"შეცვლების ისტორია",swap_price:"კლიენტისთვის ფასი არ იცვლება: {r}/დღე.",badge_swap:"⇄ მანქანა შეიცვალა",t_swapped:"მანქანა შეიცვალა",e_swap_busy:"არჩეული მანქანა ამ დღეებში დაკავებულია.",c_swap:"ავტომობილი შეიცვალა {d}: {a} → {b} ({r})",
+c_t6:"ჭუჭყიანად დაბრუნებისას დასუფთავების საფასურია ₾30, ძალიან ჭუჭყიანისას ₾80.",
+cls:{economy:"ეკონომი",compact:"კომპაქტი",suv:"SUV",offroad:"4×4",van:"მინივენი",premium:"პრემიუმი"},
+trans:{auto:"ავტომატიკა",manual:"მექანიკა"},fuel:{petrol:"ბენზინი",hybrid:"ჰიბრიდი",diesel:"დიზელი"},
+loc:{tbs:"თბილისის აეროპორტი",kut:"ქუთაისის აეროპორტი",bus:"ბათუმის აეროპორტი",office:"ოფისი, თბილისი"},
+mon:["იან","თებ","მარ","აპრ","მაი","ივნ","ივლ","აგვ","სექ","ოქტ","ნოე","დეკ"],
+monL:["იანვარი","თებერვალი","მარტი","აპრილი","მაისი","ივნისი","ივლისი","აგვისტო","სექტემბერი","ოქტომბერი","ნოემბერი","დეკემბერი"],
+wd:["კვ","ორ","სამ","ოთხ","ხუთ","პარ","შაბ"]},
+en:{brand:"Avtopark",tagline:"Rental fleet desk",demo:"Demo",role_manager:"Manager",role_operator:"Operator",
+nav_today:"Today",nav_fleet:"Fleet",nav_cal:"Calendar",nav_cust:"Customers",nav_fines:"Fines",nav_site:"Customer site",
+reset:"Restore demo data",demo_note:"This is a demo. Changes are saved only in your browser.",
+today_title:"Today's desk",st_cars:"Fleet",st_lot:"On the lot",st_out:"On rent",st_service:"In service",st_util:"Utilization, month",st_rev:"Revenue, month",st_dep:"Deposits held",
+requests:"Online requests",approve:"Confirm",decline:"Decline",open:"Open",docs_ok:"Documents uploaded",docs_no:"No documents",
+pickups:"Pickups today",returns:"Returns today",no_pickups:"No pickups today.",no_returns:"No returns today.",upcoming:"Pickups in the next 7 days",no_upcoming:"No bookings in the next week.",
+reminders:"Reminders",no_reminders:"Everything is in order.",r_oil_over:"Oil change overdue by {n} km",r_oil_soon:"Oil change in {n} km",r_ins_over:"Insurance expired {d}",r_ins_soon:"Insurance expires {d}",r_insp_over:"Inspection expired {d}",r_insp_soon:"Inspection due by {d}",
+s_available:"Available",s_out:"On rent",s_service:"In service",s_returning:"Returns today",s_leaving:"Goes out today",
+bs_request:"Online request",bs_upcoming:"Upcoming",bs_active:"Active",bs_done:"Completed",src_online:"From website",
+fleet_title:"Fleet",fleet_sub:"{n} cars",all:"All",add_car:"Add car",new_booking:"New booking",
+h_plate:"Plate",h_car:"Car",h_class:"Class",h_rate:"Rate",h_status:"Status",h_next:"Next",
+per_day:"/day",next_back:"Back {d}",next_bk:"Booked from {d}",next_none:"No bookings",
+cal_title:"Booking calendar",prev:"Previous",next:"Next",today_btn:"Today",cal_hint:"Click an empty cell to start a booking on that day.",h_fleet:"Car",
+lg_active:"Active",lg_future:"Upcoming",lg_past:"Completed",lg_request:"Online request",lg_service:"In service",
+tab_details:"Details",tab_out:"Pickup",tab_in:"Return",tab_contract:"Contract",
+bk_new:"New booking",bk_edit:"Booking",car_new:"Add car",car_edit:"Edit car",
+f_car:"Car",f_customer:"Customer",f_phone:"Phone",f_email:"Email",f_country:"Country",f_loc:"Pickup location",f_start:"Pickup date",f_end:"Return date",f_note:"Note",f_deposit:"Deposit, ₾",f_hotel:"Hotel address",
+f_plate:"Plate number",f_year:"Year",f_make:"Make",f_model:"Model",f_class:"Class",f_rate:"Daily rate, ₾",f_trans:"Transmission",f_fuel:"Fuel",f_service:"Car is in service",
+f_km:"Odometer, km",f_oil_km:"Last oil change, km",f_oil_every:"Oil change interval, km",f_ins:"Insurance valid until",f_insp:"Inspection valid until",f_color:"Color",f_photo:"Photo for the website",upload_photo:"Upload photo",remove:"Remove",
+extras:"Extras",x_driver:"Additional driver",x_seat:"Child seat",x_ins:"Full insurance",x_ins_d:"₾0 excess",x_delivery:"Hotel delivery",p_rent:"Rental",per_day_short:"per day",flat:"one-time",
+days:"{n} days",total:"Total",deposit_l:"Deposit (refundable)",save:"Save",cancel:"Cancel",delete:"Delete",confirm:"Yes, delete",
+e_dates:"The return date must be after the pickup date.",e_name:"Enter the customer's name.",e_overlap:"This car is already booked: {who}, {a} – {b}. Pick other dates or another car.",e_service:"This car is in service. Clear the service status first.",e_car:"Fill in plate, make, model and rate.",e_black:"This customer is blacklisted: “{r}”. Click save again to keep the booking anyway.",e_storage:"Browser storage is full. Remove some photos.",e_terms:"Accept the rental terms.",e_contact:"Enter your name and phone.",
+t_saved:"Saved",t_deleted:"Deleted",t_reset:"Demo data restored",t_approved:"Booking confirmed",t_declined:"Request declined",t_out:"Pickup recorded",t_in:"Return recorded",t_signed:"Signature saved",t_charged:"Fine assigned to customer",
+out_first:"The return form opens after the pickup is recorded.",dmg_hint:"Tap the diagram to mark damage. Tap a marker to remove it.",front:"Front",rear:"Rear",
+dm_scratch:"Scratch",dm_dent:"Dent",dm_crack:"Crack",dm_chip:"Paint chip",dmg_none:"No damage marked.",dmg_old:"Present at pickup",dmg_new:"New",
+fuel_l:"Fuel",fuel_e:"Empty",fuel_f:"Full",photos:"Photos",add_photos:"Add photos",
+save_out:"Record pickup",save_in:"Record return",recorded:"Recorded {d}",
+cmp_title:"Compared with pickup",cmp_km:"Distance driven",cmp_fuel:"Fuel",cmp_fuel_less:"{n}/8 lower",cmp_fuel_ok:"OK",cmp_dmg:"New damage",
+dep_title:"Deposit",dep_return:"Return in full",dep_withhold:"Withhold part",dep_amount:"Amount to withhold, ₾",
+dep_none:"Not taken",dep_held:"Held",dep_returned:"Returned",dep_withheld:"Withheld {a}",
+c_title:"Vehicle rental agreement",c_no:"No. {n} · {d}",c_company:"Lessor",c_client:"Renter",c_vehicle:"Vehicle",c_period:"Rental period",c_place:"Pickup location",
+c_terms:"Terms",c_t1:"The car is returned with the same fuel level as at pickup. Each missing 1/8 costs ₾25.",c_t2:"Traffic fines issued during the rental period are the renter's responsibility.",c_t3:"Damage not covered by insurance is paid from the deposit.",c_t4:"Leaving Georgia requires the lessor's written consent.",c_t5:"A return more than one hour late counts as an extra day.",
+c_sign_co:"Lessor's signature",c_sign_cl:"Renter's signature",sig_title:"Customer signature",sig_hint:"The customer signs here with a finger or the mouse.",sig_clear:"Clear",sig_save:"Save signature",signed:"Signed",unsigned:"Not signed",
+c_note:"In the real version the contract downloads as a PDF and is emailed to the customer.",
+cust_title:"Customers",cust_sub:"{n} customers",cust_search:"Search by name or phone",h_name:"Name",h_bookings:"Bookings",h_spent:"Paid",h_docs:"Documents",h_flag:"Status",
+cust_edit:"Customer card",doc_license:"Driver's license",doc_passport:"Passport",verified:"Verified",not_uploaded:"Not uploaded",
+black:"Blacklisted",black_set:"Add to blacklist",black_reason:"Reason",history:"Rental history",no_history:"No bookings yet.",
+fines_title:"Fines",fines_sub:"Fines are issued to the plate. The system uses the date to find who had the car at that time.",fine_new:"Add fine",
+h_when:"When",h_what:"Violation",h_amount:"Amount",h_driver:"Renter",
+fn_speed:"Speeding",fn_parking:"Illegal parking",fn_lane:"Lane violation",fn_red:"Ran a red light",
+fs_new:"New",fs_charged:"Assigned to customer",fs_paid:"Paid",fn_unmatched:"Not on rent at that time",
+charge:"Assign to customer",mark_paid:"Mark paid",f_date:"Date",f_time:"Time",f_place:"Place",f_type:"Violation",f_amount:"Amount, ₾",fine_match:"Renter: {who}",fine_nomatch:"The car was not on rent on this date.",
+site_cities:"Tbilisi · Kutaisi · Batumi",site_h:"Rent a car in Georgia in 5 minutes",site_p:"The full price upfront, no hidden fees. Upload your documents online and skip the queue at the desk.",
+site_search:"Search",site_avail:"{n} cars available for your dates",site_book:"Book",site_na:"Booked for these dates",site_total:"{n} days total",site_dep:"Deposit {a}",cur_note:"Prices are in GEL; other currencies are approximate",
+how:"How it works",how1:"Pick a car",how1d:"Dates, location and extras. You see the full price right away.",how2:"Online check-in",how2d:"Upload your license and passport in advance.",how3:"Pick it up",how3d:"Sign the contract at the desk and drive off in 5 minutes.",
+req_t:"Requirements",req1:"Age 21 or older",req2:"At least 2 years of driving experience",req3:"Passport or ID card",req4:"Card deposit, released at return",req5:"An International Driving Permit is recommended",
+incl_t:"Included in the price",incl1:"Mandatory insurance",incl2:"Unlimited mileage",incl3:"24/7 roadside assistance",incl4:"Free cancellation up to 48 hours before pickup",
+rules_t:"Driving rules in Georgia",
+rules:["Traffic drives on the right.","Speed limits unless signs say otherwise: 60 km/h in towns, 90 km/h outside towns, 110 km/h on motorways.","Seat belts are mandatory for every passenger.","Phone calls only with a hands-free kit.","The legal alcohol limit is very low. Don't drive after drinking.","Speed and traffic cameras are common. Fines go to the plate, and the company assigns them to the renter.","In winter the Gudauri and Jvari passes can close or require snow chains. Check road conditions before you set off.","Livestock often walks on roads in villages and at night."],
+rules_note:"Demo text. Verify against current law before publishing.",
+sb_title:"Booking",sb_contact:"Your details",sb_checkin:"Online check-in (optional)",sb_checkin_d:"Upload your documents now to save time at the desk.",sb_terms:"I accept the rental terms and requirements",sb_send:"Send booking request",
+sb_ok:"Request received",sb_ok_d:"Booking {n}. The company will confirm it and contact you. In this demo the request already shows on the Today screen.",sb_back:"Back to the site",sb_see:"See it on the company side",
+tab_swap:"Replace car",clean_l:"Cleanliness",cl_1:"Clean",cl_2:"Normal",cl_3:"Dirty",cl_4:"Very dirty",
+charges:"Extra charges",fee_fuel:"Fuel: {n}/8 × {f}",fee_clean:"Cleaning ({l})",dmg_fee:"Damage charge, ₾",charges_total:"Total charges",dep_back:"Returned to customer",over_dep:"Charges exceed the deposit by {a}. Collect the difference separately.",
+shots_t:"Photos by angle",sh_front:"Front",sh_rear:"Rear",sh_left:"Left side",sh_right:"Right side",sh_interior:"Interior",sh_dash:"Dashboard: odometer and fuel",at_pickup:"At pickup",at_return:"At return",add_shot:"+ Photo",extra_photos:"Other photos",
+swap_title:"Replace the car during the rental",swap_d:"If a car breaks down or is in an accident, give the customer another one. The booking and price stay the same, and the calendar shows both cars on the right days.",
+swap_date:"Replacement date",swap_reason:"Reason",sr_breakdown:"Breakdown",sr_accident:"Accident",sr_request:"Customer request",sr_other:"Other",swap_old:"Returned car",swap_new:"Replacement car",swap_service:"Send the old car to service",swap_btn:"Replace car",swap_none:"No car is free for these dates.",swap_short:"This is the last rental day, so the car can no longer be replaced.",swap_hist:"Replacement history",swap_price:"The price for the customer stays {r}/day.",badge_swap:"⇄ Car replaced",t_swapped:"Car replaced",e_swap_busy:"The selected car is booked for these days.",c_swap:"Vehicle replaced on {d}: {a} → {b} ({r})",
+c_t6:"Cleaning fee if returned dirty: ₾30, very dirty: ₾80.",
+cls:{economy:"Economy",compact:"Compact",suv:"SUV",offroad:"4×4",van:"Minivan",premium:"Premium"},
+trans:{auto:"Automatic",manual:"Manual"},fuel:{petrol:"Petrol",hybrid:"Hybrid",diesel:"Diesel"},
+loc:{tbs:"Tbilisi Airport",kut:"Kutaisi Airport",bus:"Batumi Airport",office:"Tbilisi office"},
+mon:["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+monL:["January","February","March","April","May","June","July","August","September","October","November","December"],
+wd:["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]}
+};
+
+/* ---------- constants ---------- */
+const EX={driver:15,seat:10,insurance:25,delivery:30};
+const DEP={economy:300,compact:300,suv:500,offroad:800,van:500,premium:1000};
+const CUR={GEL:{r:1,s:"₾"},USD:{r:2.7,s:"$"},EUR:{r:2.95,s:"€"}};
+const COUNTRIES=["GE","TR","AM","AZ","RU","UA","KZ","PL","DE","FR","IT","ES","GB","CZ","DK","SE","IL","AE","SA","IR","CN","JP","KR","US"];
+const DMG={scratch:"S",dent:"D",crack:"C",chip:"P"};
+const FINE_T=["speed","parking","lane","red"];
+const FEE={fuel8:25,clean:{3:30,4:80}};
+const CLEAN=[1,2,3,4];
+const SHOTS=["front","rear","left","right","interior","dash"];
+const SWAP_R=["breakdown","accident","request","other"];
+
+/* ---------- dates ---------- */
+const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const parse=s=>{const[y,m,d]=s.slice(0,10).split("-").map(Number);return new Date(y,m-1,d)};
+const addDays=(s,n)=>{const d=parse(s);d.setDate(d.getDate()+n);return iso(d)};
+const diff=(a,b)=>Math.round((parse(b)-parse(a))/864e5);
+const TODAY=iso(new Date());
+const nowStamp=()=>{const d=new Date();return `${iso(d)}T${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`};
+
+/* ---------- seed ---------- */
+const KEY="avtopark-demo-v3";
+function seed(){
+  const cars=[
+    ["c1","TP-416-RA","Toyota","Prius",2016,"economy",80,"auto","hybrid","#C9CED6",186400,7200,90,200],
+    ["c2","HE-208-LT","Hyundai","Elantra",2019,"compact",100,"auto","petrol","#2A3140",98200,4100,12,160],
+    ["c3","TC-731-GE","Toyota","Corolla",2020,"compact",110,"auto","petrol","#EEF0F2",72400,3300,150,240],
+    ["c4","KS-552-OR","Kia","Sportage",2021,"suv",150,"auto","petrol","#8B1E2B",54100,2600,210,20],
+    ["c5","RV-904-TB","Toyota","RAV4",2019,"suv",160,"auto","hybrid","#3B5B7A",88700,5200,180,260],
+    ["c6","MD-117-KZ","Mitsubishi","Delica",2008,"van",180,"auto","diesel","#D9D2C3",241300,10500,95,140],
+    ["c7","ME-300-VP","Mercedes-Benz","E 220",2018,"premium",280,"auto","diesel","#151A22",112900,1200,240,300],
+    ["c8","LP-650-SV","Toyota","Land Cruiser Prado",2017,"offroad",250,"auto","diesel","#6B6F73",158300,6100,130,-5],
+    ["c9","HT-389-BT","Hyundai","Tucson",2020,"suv",140,"auto","petrol","#2F4F3E",76500,8200,170,200],
+    ["c10","NX-725-KT","Nissan","X-Trail",2019,"suv",150,"manual","petrol","#E5E7EB",102800,2900,60,110]
+  ].map(([id,plate,make,model,year,cls,rate,trans,fuel,color,km,oilAgo,ins,insp])=>({id,plate,make,model,year,cls,rate,trans,fuel,color,service:id==="c7",
+    km,oilKm:km-oilAgo,oilEvery:10000,insUntil:addDays(TODAY,ins),inspUntil:addDays(TODAY,insp),deposit:DEP[cls],photo:null,damages:[]}));
+  const people={};
+  const P=(name,phone,country,docs=true)=>{if(!people[name])people[name]={id:"u"+(Object.keys(people).length+1),name,phone,email:"",country,docs:{license:docs,passport:docs},docImg:{},blacklist:false,reason:""};return people[name].id};
+  const raw=[
+    ["c4",-40,5,"Rustam Kerimov","+994 55 210 77 41","AZ","tbs"],
+    ["c1",-14,6,"Kenji Sato","+81 90 4412 7781","JP","tbs"],["c1",-6,4,"Anna Kowalska","+48 512 334 901","PL","tbs"],["c1",0,5,"ლევან კაპანაძე","+995 599 12 34 56","GE","office"],["c1",7,6,"Yusuf Demir","+90 532 418 22 10","TR","kut"],
+    ["c2",-3,3,"Sophie Martin","+33 6 12 48 90 31","FR","tbs"],["c2",2,7,"Ivan Petrov","+7 916 220 45 18","RU","tbs"],
+    ["c3",-12,8,"Oliver Brown","+44 7700 900412","GB","tbs"],["c3",-2,6,"Lior Cohen","+972 54 771 3302","IL","tbs"],["c3",6,4,"ნინო ბერიძე","+995 577 80 21 44","GE","office"],
+    ["c4",-8,5,"Elif Yılmaz","+90 541 220 18 47","TR","kut"],["c4",1,9,"Ahmed Al-Mansoori","+971 50 384 1176","AE","tbs"],
+    ["c5",-11,7,"Lukas Weber","+49 160 4412 908","DE","tbs"],["c5",-1,8,"Emma Schmidt","+49 151 2238 4410","DE","kut"],
+    ["c6",-4,4,"Daniel Novák","+420 603 118 552","CZ","bus"],["c6",5,10,"Marta Nowak","+48 601 220 118","PL","bus"],
+    ["c7",9,3,"Rashid Karimov","+994 50 312 44 87","AZ","tbs"],
+    ["c8",-5,12,"Ali Hassan","+966 55 410 2283","SA","tbs"],
+    ["c9",-9,5,"Mia Jensen","+45 22 41 88 09","DK","tbs"],["c9",4,3,"Giulia Rossi","+39 347 552 1904","IT","tbs"],["c9",10,5,"Tomasz Wiśniewski","+48 509 774 230","PL","kut"],
+    ["c10",-10,6,"Sara Lindqvist","+46 70 512 33 81","SE","bus"],["c10",0,3,"გიორგი მაისურაძე","+995 595 44 10 87","GE","tbs"],["c10",12,6,"Hannah Lee","+82 10 3348 2291","KR","tbs"]
+  ];
+  const extrasFor=i=>[{},{insurance:true},{driver:true},{},{insurance:true,seats:1},{},{delivery:true},{insurance:true}][i%8];
+  let bookings=raw.map(([carId,off,len,name,phone,country,loc],i)=>{
+    const car=cars.find(c=>c.id===carId);
+    const ex=Object.assign({driver:false,seats:0,insurance:false,delivery:false},extrasFor(i));
+    return {id:"B-"+(1041+i),carId,customerId:P(name,phone,country,i%5!==3),start:addDays(TODAY,off),end:addDays(TODAY,off+len),loc,rate:car.rate,note:"",
+      extras:ex,hotel:ex.delivery?"Rooms Hotel, Kostava St 14":"",status:"confirmed",source:"desk",deposit:{amount:car.deposit,status:"none",withheld:0},out:null,in:null,signature:null};
+  });
+  bookings.push({id:"B-1080",carId:"c3",customerId:P("Mateo García","+34 612 448 190","ES",true),start:addDays(TODAY,11),end:addDays(TODAY,15),loc:"tbs",rate:110,note:"",
+    extras:{driver:true,seats:1,insurance:true,delivery:false},hotel:"",status:"request",source:"online",deposit:{amount:300,status:"none",withheld:0},out:null,in:null,signature:null});
+  bookings.push({id:"B-1081",carId:"c6",customerId:P("Chen Wei","+86 138 0013 5521","CN",false),start:addDays(TODAY,16),end:addDays(TODAY,19),loc:"bus",rate:180,note:"",
+    extras:{driver:false,seats:0,insurance:true,delivery:true},hotel:"Hilton Batumi",status:"request",source:"online",deposit:{amount:500,status:"none",withheld:0},out:null,in:null,signature:null});
+  const custs=Object.values(people);
+  const rk=custs.find(c=>c.name==="Rustam Kerimov");rk.blacklist=true;rk.reason="დაბრუნდა დაფარული დაზიანებით, ანაზღაურებაზე უარი თქვა / Returned with hidden damage, refused to pay";
+  // inspections along each car's timeline
+  const oldDmg={c1:[{x:44,y:70,t:"scratch"}],c8:[{x:118,y:220,t:"dent"}],c6:[{x:30,y:160,t:"scratch"},{x:120,y:40,t:"chip"}],c4:[{x:80,y:270,t:"scratch"}]};
+  for(const car of cars){
+    const bs=bookings.filter(b=>b.carId===car.id&&b.status==="confirmed"&&b.start<TODAY).sort((a,b)=>a.start.localeCompare(b.start));
+    let km=car.km-bs.reduce((s,b)=>s+(b.end<TODAY?115*diff(b.start,b.end)+37:0),0);
+    let dmg=oldDmg[car.id]?[...oldDmg[car.id]]:[];
+    for(const b of bs){
+      b.out={km,fuel:8,clean:1,shots:{},damages:dmg.map(d=>({...d})),photos:[],at:b.start+"T10:"+String(10+(km%40)).padStart(2,"0")};
+      b.deposit.status="held";
+      if(b.end<TODAY){
+        km+=115*diff(b.start,b.end)+37;
+        const isRK=b.customerId===rk.id;
+        const nd=isRK?[{x:126,y:110,t:"dent"}]:[];
+        b.in={km,fuel:isRK?5:8,clean:isRK?3:1,shots:{},dmgFee:isRK?145:0,withheld:isRK?250:0,charges:isRK?250:0,damages:nd,photos:[],at:b.end+"T09:4"+(km%10)};
+        b.deposit=isRK?{amount:b.deposit.amount,status:"withheld",withheld:250}:{amount:b.deposit.amount,status:"returned",withheld:0};
+        dmg=[...dmg,...nd];
+        b.signature="seed";
+      }
+    }
+    car.km=km;car.oilKm=Math.min(car.oilKm,km);car.damages=dmg;
+  }
+  // demo: a past rental where the car broke down and was replaced
+  const lw=bookings.find(b=>b.customerId===people["Lukas Weber"].id),c2=cars.find(c=>c.id==="c2"),sd=addDays(TODAY,-9),nk=c2.km-1400;
+  lw.segs=[{carId:"c5",start:lw.start,end:sd},{carId:"c2",start:sd,end:lw.end}];
+  lw.swaps=[{at:sd,from:"c5",to:"c2",reason:"breakdown",note:"ძრავის შეცდომის ნათურა აინთო / Check engine light came on",oldKm:lw.out.km+260,oldFuel:5,oldClean:2,newKm:nk,newFuel:8,newClean:1,newDamages:[]}];
+  lw.carId="c2";lw.in={...lw.in,km:nk+520,fuel:8,clean:1,damages:[]};
+  // adjust oil after timeline
+  cars.find(c=>c.id==="c6").oilKm=cars.find(c=>c.id==="c6").km-10500;
+  const fines=[
+    {id:"f1",carId:"c3",at:addDays(TODAY,-1)+"T14:32",type:"speed",amount:50,place:"კახეთის გზატკეცილი / Kakheti Highway",status:"new"},
+    {id:"f2",carId:"c8",at:addDays(TODAY,-3)+"T11:05",type:"parking",amount:30,place:"ჭავჭავაძის გამზ., თბილისი / Chavchavadze Ave, Tbilisi",status:"charged"},
+    {id:"f3",carId:"c1",at:addDays(TODAY,-5)+"T19:47",type:"speed",amount:50,place:"რუსთაველის გამზ., თბილისი / Rustaveli Ave, Tbilisi",status:"paid"},
+    {id:"f4",carId:"c9",at:addDays(TODAY,-2)+"T09:10",type:"lane",amount:100,place:"აღმაშენებლის ხეივანი / Agmashenebeli Alley",status:"new"}
+  ];
+  return {cars,bookings,customers:custs,fines,seq:2000};
+}
+function load(){try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(s&&s.cars&&s.bookings&&s.customers)return s}catch(e){}return seed()}
+let DB=load();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(DB));return true}catch(e){toast(t("e_storage"));return false}}
+let lang="ka",role="manager",view="today",filter="all",custQ="",winStart=addDays(TODAY,-3);
+const N=14;
+const SITE={loc:"tbs",start:addDays(TODAY,13),end:addDays(TODAY,17),cls:"all",cur:"GEL"};
+try{lang=localStorage.getItem(KEY+"-lang")||"ka";role=localStorage.getItem(KEY+"-role")||"manager"}catch(e){}
+const savePrefs=()=>{try{localStorage.setItem(KEY+"-lang",lang);localStorage.setItem(KEY+"-role",role)}catch(e){}};
+
+/* ---------- helpers ---------- */
+const L=()=>T[lang];
+const t=(k,vars)=>{let s=L()[k]??k;if(vars)for(const v in vars)s=String(s).replaceAll("{"+v+"}",vars[v]);return s};
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt=s=>{const d=parse(s);return `${d.getDate()} ${L().mon[d.getMonth()]}`};
+const fmtFull=s=>{const d=parse(s);return `${d.getDate()} ${L().mon[d.getMonth()]} ${d.getFullYear()}`};
+const fmtStamp=s=>s?`${fmt(s)}, ${s.slice(11,16)}`:"";
+const money=n=>"₾"+Math.round(n).toLocaleString("en-US");
+const cur=n=>{const c=CUR[SITE.cur];return c.s+Math.round(n/c.r).toLocaleString("en-US")};
+const bil=s=>{if(typeof s!=="string"||!s.includes(" / "))return s;const[a,b]=s.split(" / ");return lang==="ka"?a:b};
+const plate=p=>`<span class="plate"><span class="strip">GE</span><span class="num">${esc(p)}</span></span>`;
+const carById=id=>DB.cars.find(c=>c.id===id);
+const custById=id=>DB.customers.find(c=>c.id===id);
+const bkById=id=>DB.bookings.find(b=>b.id===id);
+const carLabel=c=>c?`${c.make} ${c.model}`:"—";
+const bDays=b=>Math.max(1,diff(b.start,b.end));
+const isMgr=()=>role==="manager";
+const region=code=>{if(!code)return"";try{return new Intl.DisplayNames([lang],{type:"region"}).of(code)}catch(e){return code}};
+const confirmed=()=>DB.bookings.filter(b=>b.status==="confirmed");
+const clone=o=>JSON.parse(JSON.stringify(o));
+const occ=b=>b.segs&&b.segs.length?b.segs:[{carId:b.carId,start:b.start,end:b.end}];
+const occAll=carId=>DB.bookings.flatMap(b=>occ(b).map((x,i,a)=>({...x,b,first:i===0,last:i===a.length-1}))).filter(x=>x.carId===carId);
+const segsFor=carId=>occAll(carId).filter(x=>x.b.status==="confirmed");
+function outBase(b){const s=b.swaps&&b.swaps.length?b.swaps[b.swaps.length-1]:null;if(!s)return b.out;return{km:s.newKm,fuel:s.newFuel,clean:s.newClean||1,damages:s.newDamages||[],shots:{}}}
+const icon={plus:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v10M3 8h10"/></svg>'};
+
+function priceOf(b){
+  const n=bDays(b),x=b.extras||{},items=[{k:"p_rent",q:`${n} ×`,u:b.rate,v:n*b.rate}];
+  if(x.driver)items.push({k:"x_driver",q:`${n} ×`,u:EX.driver,v:n*EX.driver});
+  if(x.seats)items.push({k:"x_seat",q:`${x.seats} × ${n} ×`,u:EX.seat,v:n*EX.seat*x.seats});
+  if(x.insurance)items.push({k:"x_ins",q:`${n} ×`,u:EX.insurance,v:n*EX.insurance});
+  if(x.delivery)items.push({k:"x_delivery",q:null,u:null,v:EX.delivery});
+  return {items,total:items.reduce((s,i)=>s+i.v,0)};
+}
+function bkState(b){if(b.status==="request")return"request";if(b.end<TODAY||(b.in&&b.end<=TODAY))return"done";if(b.start>TODAY)return"upcoming";return"active"}
+function statusOf(car){
+  if(car.service)return"service";
+  const ss=segsFor(car.id);
+  if(ss.some(x=>x.first&&x.start===TODAY&&!x.b.out))return"leaving";
+  if(ss.some(x=>x.last&&x.end===TODAY&&!x.b.in))return"returning";
+  if(ss.some(x=>x.start<=TODAY&&x.end>TODAY))return"out";
+  return"available";
+}
+function nextFor(car){
+  const ss=segsFor(car.id).sort((a,b)=>a.start.localeCompare(b.start));
+  const c=ss.find(x=>x.start<TODAY&&x.end>TODAY);
+  if(c)return t("next_back",{d:fmt(c.end)});
+  const n=ss.find(x=>x.start>=TODAY);
+  return n?t("next_bk",{d:fmt(n.start)}):t("next_none");
+}
+function monthStats(){
+  const d=parse(TODAY),ms=iso(new Date(d.getFullYear(),d.getMonth(),1)),me=iso(new Date(d.getFullYear(),d.getMonth()+1,1)),dim=diff(ms,me);
+  let carDays=0,rev=0;
+  for(const b of confirmed()){const a=b.start>ms?b.start:ms,z=b.end<me?b.end:me,n=diff(a,z);if(n>0){carDays+=n;rev+=n*priceOf(b).total/bDays(b)}}
+  const held=DB.bookings.filter(b=>b.deposit&&b.deposit.status==="held").reduce((s,b)=>s+b.deposit.amount,0);
+  return {util:DB.cars.length?carDays/(DB.cars.length*dim):0,rev,held};
+}
+function remindersFor(car){
+  const r=[],left=car.oilKm+car.oilEvery-car.km;
+  if(left<0)r.push({lvl:"bad",ic:"OIL",txt:t("r_oil_over",{n:(-left).toLocaleString("en-US")})});
+  else if(left<1000)r.push({lvl:"warn",ic:"OIL",txt:t("r_oil_soon",{n:left.toLocaleString("en-US")})});
+  const dIns=diff(TODAY,car.insUntil),dInsp=diff(TODAY,car.inspUntil);
+  if(dIns<0)r.push({lvl:"bad",ic:"INS",txt:t("r_ins_over",{d:fmt(car.insUntil)})});else if(dIns<=30)r.push({lvl:"warn",ic:"INS",txt:t("r_ins_soon",{d:fmt(car.insUntil)})});
+  if(dInsp<0)r.push({lvl:"bad",ic:"TI",txt:t("r_insp_over",{d:fmt(car.inspUntil)})});else if(dInsp<=30)r.push({lvl:"warn",ic:"TI",txt:t("r_insp_soon",{d:fmt(car.inspUntil)})});
+  return r;
+}
+function fineMatch(f){
+  const d=f.at.slice(0,10),x=segsFor(f.carId).filter(x=>x.start<=d&&x.end>=d).sort((a,b)=>b.start.localeCompare(a.start))[0];
+  return x?x.b:null;
+}
+function readImage(file,max=900){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>{const img=new Image();img.onload=()=>{const s=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement("canvas");c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext("2d").drawImage(img,0,0,c.width,c.height);res(c.toDataURL("image/jpeg",.72))};img.onerror=rej;img.src=fr.result};fr.onerror=rej;fr.readAsDataURL(file)})}
+
+/* car side-view art */
+function carArt(c){
+  if(c.photo)return `<img src="${c.photo}" alt="${esc(carLabel(c))}">`;
+  const shapes={
+    sedan:{b:"M14 74 L22 58 Q30 50 46 48 L78 46 L100 28 Q108 24 120 24 L160 24 Q172 24 180 32 L196 46 L218 50 Q228 52 228 62 L228 76 Q228 80 224 80 L18 80 Q14 80 14 76 Z",w:["M86 46 L104 30 L134 30 L134 46 Z","M140 30 L160 30 Q170 30 176 36 L186 46 L140 46 Z"],y:80},
+    suv:{b:"M14 78 L16 56 Q18 48 30 46 L62 44 L82 22 Q86 18 96 18 L192 18 Q202 18 206 26 L220 46 Q228 48 228 58 L228 78 Q228 82 224 82 L18 82 Q14 82 14 78 Z",w:["M70 44 L88 24 L136 24 L136 44 Z","M142 24 L190 24 Q198 24 202 30 L212 44 L142 44 Z"],y:82},
+    van:{b:"M14 80 L16 50 Q18 42 28 40 L48 38 L66 14 Q70 10 80 10 L214 10 Q226 10 226 22 L228 80 Q228 84 224 84 L18 84 Q14 84 14 80 Z",w:["M54 38 L72 16 L120 16 L120 38 Z","M126 16 L172 16 L172 38 L126 38 Z","M178 16 L216 16 Q220 16 220 20 L220 38 L178 38 Z"],y:84}
+  };
+  const s=shapes[{suv:"suv",offroad:"suv",van:"van"}[c.cls]||"sedan"];
+  const wheel=x=>`<circle cx="${x}" cy="${s.y}" r="17" fill="#1B1F27"/><circle cx="${x}" cy="${s.y}" r="8" fill="#A7AFBC"/>`;
+  return `<svg viewBox="0 0 240 110" role="img" aria-label="${esc(carLabel(c))}"><ellipse cx="121" cy="${s.y+16}" rx="104" ry="5" fill="rgba(0,0,0,.14)"/><path d="${s.b}" fill="${esc(c.color||"#9AA3B2")}" stroke="rgba(0,0,0,.28)" stroke-width="1.5"/>${s.w.map(w=>`<path d="${w}" fill="#2B3A4A" opacity=".85"/>`).join("")}<rect x="216" y="56" width="10" height="5" rx="2" fill="#F5D76E"/>${wheel(60)}${wheel(184)}</svg>`;
+}
+
+/* ---------- shell ---------- */
+const VIEWS=[["today","nav_today"],["fleet","nav_fleet"],["calendar","nav_cal"],["customers","nav_cust"],["fines","nav_fines"],["site","nav_site"]];
+function renderStatic(){
+  document.documentElement.lang=lang;
+  document.documentElement.dataset.role=role;
+  $("role").value=role;
+  document.querySelectorAll("[data-t]").forEach(el=>el.textContent=t(el.dataset.t));
+  document.querySelectorAll("[data-lang]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.lang===lang)));
+  const reqN=DB.bookings.filter(b=>b.status==="request").length, fineN=DB.fines.filter(f=>f.status==="new").length;
+  $("nav").innerHTML=VIEWS.map(([v,k])=>{
+    const c=v==="today"&&reqN?`<span class="cnt">${reqN}</span>`:v==="fines"&&fineN?`<span class="cnt">${fineN}</span>`:"";
+    return `<a href="#${v}" class="${v==="site"?"site-link":""}" ${v===view?'aria-current="page"':""}>${t(k)}${c}</a>`}).join("");
+}
+function render(){
+  renderStatic();
+  for(const[v]of VIEWS)$("v-"+v).hidden=v!==view;
+  ({today:renderToday,fleet:renderFleet,calendar:renderCalendar,customers:renderCustomers,fines:renderFines,site:renderSite})[view]();
+}
+
+/* ---------- today ---------- */
+function bookingItem(b,mode){
+  const c=carById(b.carId),u=custById(b.customerId);if(!c||!u)return"";
+  const right=mode==="return"?`<b>${esc(t("loc")[b.loc]||"")}</b>${fmt(b.start)} – ${fmt(b.end)}`:`<b>${money(priceOf(b).total)}</b>${t("days",{n:bDays(b)})}`;
+  const lead=mode==="upcoming"?`<span class="date-chip">${fmt(b.start)}</span>`:plate(c.plate);
+  const meta=mode==="upcoming"?`${esc(carLabel(c))} · ${esc(c.plate)}`:`${esc(carLabel(c))} · ${esc(u.phone)}`;
+  return `<button class="item" type="button" data-booking="${b.id}">${lead}<div style="min-width:0"><div class="who">${esc(u.name)}${u.blacklist?` <span class="pill s-black">${t("black")}</span>`:""}</div><div class="meta">${meta}</div></div><div class="right">${right}</div></button>`;
+}
+function renderToday(){
+  const st={available:0,out:0,service:0,returning:0,leaving:0};DB.cars.forEach(c=>st[statusOf(c)]++);
+  const m=monthStats(),d=parse(TODAY),C=confirmed();
+  const pick=C.filter(b=>b.start===TODAY),ret=C.filter(b=>b.end===TODAY);
+  const up=C.filter(b=>b.start>TODAY&&b.start<=addDays(TODAY,7)).sort((a,b)=>a.start.localeCompare(b.start));
+  const reqs=DB.bookings.filter(b=>b.status==="request").sort((a,b)=>a.start.localeCompare(b.start));
+  const rems=DB.cars.flatMap(c=>remindersFor(c).map(r=>({...r,car:c}))).sort((a,b)=>(a.lvl==="bad"?0:1)-(b.lvl==="bad"?0:1));
+  $("v-today").innerHTML=`
+    <div class="view-head"><div><h1>${t("today_title")}</h1><p class="sub">${L().wd[d.getDay()]}, ${d.getDate()} ${L().monL[d.getMonth()]} ${d.getFullYear()}</p></div>
+      <button class="btn primary" type="button" data-new-booking>${icon.plus}${t("new_booking")}</button></div>
+    <div class="stats">
+      <div class="stat"><div class="k">${t("st_cars")}</div><div class="v">${DB.cars.length}</div></div>
+      <div class="stat"><div class="k">${t("st_lot")}</div><div class="v" style="color:var(--ok)">${st.available+st.leaving}</div></div>
+      <div class="stat"><div class="k">${t("st_out")}</div><div class="v" style="color:var(--accent)">${st.out+st.returning}</div></div>
+      <div class="stat"><div class="k">${t("st_service")}</div><div class="v" style="color:var(--warn)">${st.service}</div></div>
+      <div class="stat mgr-only"><div class="k">${t("st_util")}</div><div class="v">${Math.round(m.util*100)}<small>%</small></div><div class="meter"><i style="width:${Math.min(100,m.util*100)}%"></i></div></div>
+      <div class="stat mgr-only"><div class="k">${t("st_rev")}</div><div class="v">${money(m.rev)}</div></div>
+      <div class="stat"><div class="k">${t("st_dep")}</div><div class="v">${money(m.held)}</div></div>
+    </div>
+    ${reqs.length?`<div class="panel req"><h2>${t("requests")} · ${reqs.length}</h2>${reqs.map(b=>{const c=carById(b.carId),u=custById(b.customerId),hasDocs=u.docs.license&&u.docs.passport;
+      return `<div class="req-item"><div style="min-width:0"><div class="who" style="font-weight:700">${esc(u.name)} · ${esc(region(u.country))}</div>
+        <div class="meta" style="color:var(--muted);font-size:12.5px">${esc(carLabel(c))} · ${fmt(b.start)} – ${fmt(b.end)} · ${esc(t("loc")[b.loc])} · <b style="color:var(--ink)">${money(priceOf(b).total)}</b></div>
+        <div style="margin-top:4px"><span class="pill ${hasDocs?"s-available":"s-new"}">${hasDocs?t("docs_ok"):t("docs_no")}</span></div></div>
+        <div class="acts"><button class="btn sm" type="button" data-booking="${b.id}">${t("open")}</button><button class="btn sm" type="button" data-decline="${b.id}">${t("decline")}</button><button class="btn sm ok" type="button" data-approve="${b.id}">${t("approve")}</button></div></div>`}).join("")}</div>`:""}
+    <div class="cols">
+      <div class="panel"><h2>${t("pickups")} · ${pick.length}</h2><div class="list">${pick.map(b=>bookingItem(b,"pickup")).join("")||`<div class="empty">${t("no_pickups")}</div>`}</div></div>
+      <div class="panel"><h2>${t("returns")} · ${ret.length}</h2><div class="list">${ret.map(b=>bookingItem(b,"return")).join("")||`<div class="empty">${t("no_returns")}</div>`}</div></div>
+    </div>
+    <div class="cols">
+      <div class="panel"><h2>${t("upcoming")}</h2><div class="list">${up.map(b=>bookingItem(b,"upcoming")).join("")||`<div class="empty">${t("no_upcoming")}</div>`}</div></div>
+      <div class="panel"><h2>${t("reminders")} · ${rems.length}</h2><div class="list">${rems.map(r=>`<button class="rem" type="button" data-car="${r.car.id}"><span class="ic ${r.lvl}">${r.ic==="OIL"?"⛽":r.ic==="INS"?"🛡":"🔧"}</span><div style="min-width:0"><div class="who" style="font-weight:700">${esc(r.txt)}</div><div class="meta" style="color:var(--muted);font-size:12.5px">${esc(carLabel(r.car))} · ${esc(r.car.plate)}</div></div><span></span></button>`).join("")||`<div class="empty">${t("no_reminders")}</div>`}</div></div>
+    </div>`;
+}
+
+/* ---------- fleet ---------- */
+function renderFleet(){
+  const counts={all:DB.cars.length,available:0,out:0,service:0};
+  const rows=DB.cars.map(c=>{const s=statusOf(c),g=s==="returning"?"out":s==="leaving"?"available":s;counts[g]++;return{c,s,g}});
+  const shown=rows.filter(r=>filter==="all"||r.g===filter);
+  const chip=k=>`<button class="chip" type="button" data-filter="${k}" aria-pressed="${filter===k}">${k==="all"?t("all"):t("s_"+k)}<span>${counts[k]}</span></button>`;
+  $("v-fleet").innerHTML=`
+    <div class="view-head"><div><h1>${t("fleet_title")}</h1><p class="sub">${t("fleet_sub",{n:DB.cars.length})}</p></div>
+      <button class="btn primary mgr-only" type="button" data-new-car>${icon.plus}${t("add_car")}</button></div>
+    <div class="chips">${["all","available","out","service"].map(chip).join("")}</div>
+    <div class="table fleet">
+      <div class="trow head"><div>${t("h_plate")}</div><div>${t("h_car")}</div><div>${t("h_class")}</div><div>${t("h_rate")}</div><div>${t("h_status")}</div><div>${t("h_next")}</div></div>
+      ${shown.map(({c,s})=>{const rem=remindersFor(c);return `<button class="trow" type="button" data-car="${c.id}">
+        <div class="c-plate">${plate(c.plate)}</div>
+        <div class="c-name"><div class="car-name">${esc(carLabel(c))}${rem.length?`<span class="warn-dot" title="${esc(rem.map(r=>r.txt).join(" · "))}">!</span>`:""}</div><div class="car-spec">${esc(c.year)} · ${t("trans")[c.trans]} · ${t("fuel")[c.fuel]} · ${c.km.toLocaleString("en-US")} km</div></div>
+        <div class="c-class car-spec">${t("cls")[c.cls]}</div>
+        <div class="c-rate rate">${money(c.rate)}<small>${t("per_day")}</small></div>
+        <div class="c-status"><span class="pill s-${s}">${t("s_"+s)}</span></div>
+        <div class="c-next next">${nextFor(c)}</div></button>`}).join("")}
+    </div>`;
+}
+
+/* ---------- calendar ---------- */
+const CELL=()=>window.innerWidth<640?44:56;
+function renderCalendar(){
+  const cell=CELL(),label=window.innerWidth<640?132:210,days=[...Array(N)].map((_,i)=>addDays(winStart,i)),last=days[N-1];
+  const cls=s=>{const d=parse(s).getDay();return(d===0||d===6?"we ":"")+(s===TODAY?"td":"")};
+  const head=days.map(s=>{const d=parse(s);return `<div class="${cls(s)}">${L().wd[d.getDay()]}<b>${d.getDate()}</b></div>`}).join("");
+  const cells=days.map(s=>`<div class="${cls(s)}"></div>`).join("");
+  const rows=DB.cars.map(c=>{
+    const bars=occAll(c.id).map(sg=>{
+      const b=sg.b,si=diff(winStart,sg.start)+.5,ei=diff(winStart,sg.end)+.5,l=Math.max(si,0),r=Math.min(ei,N);
+      if(r<=0||l>=N)return"";
+      const k=b.status==="request"?"request":sg.end<=TODAY?"past":sg.start>TODAY?"future":"";
+      const u=custById(b.customerId),sw=b.swaps&&b.swaps.length?"⇄ ":"";
+      return `<button class="bar ${k} ${si<0?"cut-l":""} ${ei>N?"cut-r":""}" type="button" data-booking="${b.id}" style="left:${l*cell}px;width:${(r-l)*cell-2}px" title="${esc(u?.name)} · ${fmt(sg.start)} – ${fmt(sg.end)}"><span>${sw}${esc(u?.name)}</span></button>`;
+    }).join("");
+    return `<div class="g-label"><div class="car-name">${esc(carLabel(c))}</div><div>${plate(c.plate)}</div></div><div class="g-track ${c.service?"service":""}" data-track="${c.id}"><div class="g-cells">${cells}</div>${bars}</div>`;
+  }).join("");
+  const a=parse(winStart),z=parse(last);
+  $("v-calendar").innerHTML=`
+    <div class="view-head"><div><h1>${t("cal_title")}</h1></div>
+      <div class="cal-bar">
+        <button class="btn" type="button" data-shift="-7" aria-label="${t("prev")}">←</button>
+        <span class="range">${a.getDate()} ${L().mon[a.getMonth()]} – ${z.getDate()} ${L().mon[z.getMonth()]}</span>
+        <button class="btn" type="button" data-shift="7" aria-label="${t("next")}">→</button>
+        <button class="btn" type="button" data-shift="0">${t("today_btn")}</button>
+        <button class="btn primary" type="button" data-new-booking>${icon.plus}${t("new_booking")}</button>
+      </div></div>
+    <div class="gantt"><div class="g-grid" style="--cell:${cell}px;--label:${label}px;--n:${N}"><div class="g-label corner">${t("h_fleet")}</div><div class="g-head">${head}</div>${rows}</div></div>
+    <div class="legend"><span><i style="background:var(--accent)"></i>${t("lg_active")}</span><span><i style="background:var(--accent-soft);box-shadow:inset 0 0 0 1.5px var(--accent)"></i>${t("lg_future")}</span><span><i style="background:var(--past)"></i>${t("lg_past")}</span><span><i style="background:repeating-linear-gradient(135deg,var(--info-soft) 0 3px,color-mix(in srgb,var(--info) 35%,var(--info-soft)) 3px 6px);box-shadow:inset 0 0 0 1px var(--info)"></i>${t("lg_request")}</span><span><i style="background:repeating-linear-gradient(135deg,transparent 0 3px,color-mix(in srgb,var(--warn) 45%,transparent) 3px 6px)"></i>${t("lg_service")}</span></div>
+    <p class="hint">${t("cal_hint")}</p>`;
+}
+
+/* ---------- customers ---------- */
+function custStats(u){const bs=confirmed().filter(b=>b.customerId===u.id);return{n:bs.length,spent:bs.filter(b=>b.start<=TODAY).reduce((s,b)=>s+priceOf(b).total,0)}}
+function renderCustomers(){
+  const q=custQ.trim().toLowerCase();
+  const list=DB.customers.filter(u=>!q||u.name.toLowerCase().includes(q)||u.phone.replace(/\s/g,"").includes(q.replace(/\s/g,""))).sort((a,b)=>a.name.localeCompare(b.name));
+  $("v-customers").innerHTML=`
+    <div class="view-head"><div><h1>${t("cust_title")}</h1><p class="sub">${t("cust_sub",{n:DB.customers.length})}</p></div>
+      <input class="search-in" id="cust-q" type="search" placeholder="${t("cust_search")}" value="${esc(custQ)}"></div>
+    <div class="table cust">
+      <div class="trow head"><div>${t("h_name")}</div><div>${t("f_phone")}</div><div>${t("h_bookings")}</div><div>${t("h_spent")}</div><div>${t("h_docs")}</div><div>${t("h_flag")}</div></div>
+      ${list.map(u=>{const s=custStats(u);return `<button class="trow" type="button" data-cust="${u.id}">
+        <div><div class="car-name">${esc(u.name)}</div><div class="car-spec">${esc(region(u.country))}</div></div>
+        <div class="c-phone car-spec num">${esc(u.phone)}</div>
+        <div class="c-n num">${s.n}</div>
+        <div class="num" style="font-weight:700">${money(s.spent)}</div>
+        <div class="car-spec">${u.docs.license?"✓":"✗"} ${t("doc_license")}<br>${u.docs.passport?"✓":"✗"} ${t("doc_passport")}</div>
+        <div>${u.blacklist?`<span class="pill s-black">${t("black")}</span>`:""}</div></button>`}).join("")}
+    </div>`;
+  const qi=$("v-customers").querySelector("#cust-q");
+  qi.addEventListener("input",()=>{custQ=qi.value;const pos=qi.selectionStart;renderCustomers();const n=$("v-customers").querySelector("#cust-q");n.focus();n.setSelectionRange(pos,pos)});
+}
+
+/* ---------- fines ---------- */
+function renderFines(){
+  const list=[...DB.fines].sort((a,b)=>b.at.localeCompare(a.at));
+  $("v-fines").innerHTML=`
+    <div class="view-head"><div><h1>${t("fines_title")}</h1><p class="sub">${t("fines_sub")}</p></div>
+      <button class="btn primary" type="button" data-new-fine>${icon.plus}${t("fine_new")}</button></div>
+    <div class="table fines">
+      <div class="trow head"><div>${t("h_when")}</div><div>${t("h_plate")}</div><div>${t("h_what")}</div><div>${t("h_amount")}</div><div>${t("h_driver")}</div><div>${t("h_flag")}</div><div></div></div>
+      ${list.map(f=>{const c=carById(f.carId),b=fineMatch(f),u=b&&custById(b.customerId);
+        const stCls=!b?"unmatched":f.status;
+        return `<div class="trow">
+          <div class="num"><b>${fmt(f.at)}</b><div class="car-spec">${f.at.slice(11,16)}</div></div>
+          <div>${c?plate(c.plate):"—"}</div>
+          <div><div style="font-weight:700">${t("fn_"+f.type)}</div><div class="car-spec">${esc(bil(f.place))}</div></div>
+          <div class="num" style="font-weight:800">${money(f.amount)}</div>
+          <div>${u?`<button class="btn ghost sm" style="padding:0;font-weight:700;color:var(--ink)" type="button" data-booking="${b.id}">${esc(u.name)}</button><div class="car-spec">${b.id} · ${fmt(b.start)} – ${fmt(b.end)}</div>`:`<span class="car-spec">${t("fn_unmatched")}</span>`}</div>
+          <div><span class="pill s-${stCls}">${b?t("fs_"+f.status):t("fn_unmatched")}</span></div>
+          <div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap">${b&&f.status==="new"?`<button class="btn sm" type="button" data-charge="${f.id}">${t("charge")}</button>`:""}${f.status!=="paid"?`<button class="btn sm" type="button" data-paid="${f.id}">${t("mark_paid")}</button>`:""}</div>
+        </div>`}).join("")}
+    </div>`;
+}
+function openFine(){
+  $("fine-body").innerHTML=`<form class="fm padded" id="fine-form" novalidate>
+    <div class="fld full"><label for="fn-car">${t("f_car")}</label><select id="fn-car">${DB.cars.map(c=>`<option value="${c.id}">${esc(c.plate)} · ${esc(carLabel(c))}</option>`).join("")}</select></div>
+    <div class="fld"><label for="fn-date">${t("f_date")}</label><input id="fn-date" type="date" value="${addDays(TODAY,-1)}"></div>
+    <div class="fld"><label for="fn-time">${t("f_time")}</label><input id="fn-time" type="time" value="12:00"></div>
+    <div class="fld"><label for="fn-type">${t("f_type")}</label><select id="fn-type">${FINE_T.map(k=>`<option value="${k}">${t("fn_"+k)}</option>`).join("")}</select></div>
+    <div class="fld"><label for="fn-amount">${t("f_amount")}</label><input id="fn-amount" type="number" min="1" value="50"></div>
+    <div class="fld full"><label for="fn-place">${t("f_place")}</label><input id="fn-place" autocomplete="off"></div>
+    <div class="info-box" id="fn-match"></div>
+    <div class="actions"><button class="btn" type="button" data-close>${t("cancel")}</button><button class="btn primary" type="submit">${t("save")}</button></div></form>`;
+  const upd=()=>{const b=fineMatch({carId:$("fn-car").value,at:$("fn-date").value+"T"+$("fn-time").value});$("fn-match").textContent=b?t("fine_match",{who:custById(b.customerId).name+" ("+b.id+")"}):t("fine_nomatch")};
+  ["fn-car","fn-date"].forEach(id=>$(id).addEventListener("input",upd));upd();
+  $("fine-form").addEventListener("submit",e=>{e.preventDefault();
+    DB.fines.push({id:"f"+(++DB.seq),carId:$("fn-car").value,at:$("fn-date").value+"T"+($("fn-time").value||"12:00"),type:$("fn-type").value,amount:+$("fn-amount").value||0,place:$("fn-place").value.trim(),status:"new"});
+    save();$("dlg-fine").close();toast(t("t_saved"));render()});
+  bindClose($("dlg-fine"));$("dlg-fine").showModal();
+}
+
+/* ---------- booking dialog ---------- */
+let BK=null,bkTab="details",ackBlack=false,insp=null,sigDirty=false;
+function openBooking(b,preset={}){
+  ackBlack=false;
+  if(b){BK=b}else{
+    const carId=preset.carId||DB.cars.find(c=>!c.service)?.id,car=carById(carId),start=preset.start||TODAY;
+    BK={id:null,carId,customerId:null,start,end:addDays(start,3),loc:"tbs",rate:car.rate,note:"",extras:{driver:false,seats:0,insurance:false,delivery:false},hotel:"",status:"confirmed",source:"desk",deposit:{amount:car.deposit,status:"none",withheld:0},out:null,in:null,signature:null};
+  }
+  bkTab=preset.tab||"details";
+  renderBk();$("dlg-bk").showModal();
+  if(!b)setTimeout(()=>$("bk-customer")?.focus(),30);
+}
+function renderBk(){
+  const b=BK,isNew=!b.id,st=isNew?null:bkState(b);
+  $("bk-title").textContent=isNew?t("bk_new"):`${t("bk_edit")} ${b.id}`;
+  $("bk-badges").innerHTML=isNew?"":`<span class="pill s-${st}">${t("bs_"+st)}</span>${b.source==="online"?`<span class="pill s-request">${t("src_online")}</span>`:""}${b.swaps&&b.swaps.length?`<span class="pill s-new">${t("badge_swap")}</span>`:""}`;
+  const tabs=[["details","tab_details",true,false],["out","tab_out",!isNew&&b.status==="confirmed",!!b.out],["swap","tab_swap",!isNew&&b.status==="confirmed"&&!!b.out&&!b.in,!!(b.swaps&&b.swaps.length)],["in","tab_in",!isNew&&b.status==="confirmed"&&!!b.out,!!b.in],["contract","tab_contract",!isNew,!!b.signature]];
+  if(!tabs.find(x=>x[0]===bkTab)[2])bkTab="details";
+  $("bk-tabs").innerHTML=tabs.map(([k,l,en,done])=>`<button type="button" role="tab" data-bktab="${k}" aria-selected="${k===bkTab}" ${en?"":"disabled"}>${t(l)}${done?'<span class="tick">✓</span>':""}</button>`).join("");
+  const body=$("bk-body");
+  if(bkTab==="details")body.innerHTML=detailsHTML();
+  if(bkTab==="out"||bkTab==="in"){insp=makeDraft(bkTab);body.innerHTML=`<div class="pane" id="insp-pane"></div>`;renderInsp()}
+  if(bkTab==="contract")body.innerHTML=contractHTML();
+  if(bkTab==="swap"){body.innerHTML=`<div class="pane" id="swap-pane"></div>`;renderSwap()}
+  bindClose($("dlg-bk"));
+  if(bkTab==="details")bindDetails();
+  if(bkTab==="contract")bindSig();
+}
+function bindClose(dlg){dlg.querySelectorAll("[data-close]").forEach(x=>x.onclick=()=>dlg.close())}
+
+function detailsHTML(){
+  const b=BK,u=custById(b.customerId),mgr=isMgr();
+  return `<form class="fm padded" id="bk-form" novalidate style="padding-top:16px">
+    ${b.swaps&&b.swaps.length?`<div class="info-box" style="color:var(--ink)">${b.swaps.map(sw=>"⇄ "+esc(t("c_swap",{d:fmt(sw.at),a:carById(sw.from)?.plate||"",b:carById(sw.to)?.plate||"",r:t("sr_"+sw.reason)}))).join("<br>")}</div>`:""}
+    <div class="fld full"><label for="bk-car">${t("f_car")}</label><select id="bk-car" ${b.swaps&&b.swaps.length?"disabled":""}>${DB.cars.map(c=>`<option value="${c.id}" ${c.id===b.carId?"selected":""}>${esc(c.plate)} · ${esc(carLabel(c))} · ${money(c.rate)}${t("per_day")}${c.service?" · "+t("s_service"):""}</option>`).join("")}</select></div>
+    <div class="fld"><label for="bk-customer">${t("f_customer")}</label><input id="bk-customer" list="cust-list" autocomplete="off" value="${esc(u?.name||"")}"><datalist id="cust-list">${DB.customers.map(c=>`<option value="${esc(c.name)}"></option>`).join("")}</datalist></div>
+    <div class="fld"><label for="bk-phone">${t("f_phone")}</label><input id="bk-phone" inputmode="tel" autocomplete="off" value="${esc(u?.phone||"")}"></div>
+    <div class="fld"><label for="bk-start">${t("f_start")}</label><input id="bk-start" type="date" value="${b.start}" ${b.swaps&&b.swaps.length?"disabled":""}></div>
+    <div class="fld"><label for="bk-end">${t("f_end")}</label><input id="bk-end" type="date" value="${b.end}"></div>
+    <div class="fld"><label for="bk-loc">${t("f_loc")}</label><select id="bk-loc">${Object.entries(t("loc")).map(([k,v])=>`<option value="${k}" ${k===b.loc?"selected":""}>${esc(v)}</option>`).join("")}</select></div>
+    <div class="fld"><label for="bk-dep">${t("f_deposit")}</label><input id="bk-dep" type="number" min="0" step="50" value="${b.deposit.amount}" ${mgr?"":"disabled"}></div>
+    <div class="fld full"><span class="lbl">${t("extras")}</span></div>
+    <div class="extras">${extrasHTML(b.extras,"bk")}</div>
+    <div class="fld full" id="bk-hotel-wrap" ${b.extras.delivery?"":"hidden"}><label for="bk-hotel">${t("f_hotel")}</label><input id="bk-hotel" autocomplete="off" value="${esc(b.hotel||"")}"></div>
+    <div class="fld full"><label for="bk-note">${t("f_note")}</label><input id="bk-note" autocomplete="off" value="${esc(b.note)}"></div>
+    <div class="summary" id="bk-sum"></div>
+    <div class="err" id="bk-err" hidden></div>
+    <div class="actions">
+      ${b.id&&mgr?`<button class="btn danger spacer" type="button" id="bk-del">${t("delete")}</button>`:'<span class="spacer"></span>'}
+      <button class="btn" type="button" data-close>${t("cancel")}</button>
+      ${b.status==="request"?`<button class="btn ok" type="button" id="bk-approve">${t("approve")}</button>`:""}
+      <button class="btn primary" type="submit">${t("save")}</button>
+    </div></form>`;
+}
+function extrasHTML(x,p){
+  return `<label class="extra"><input type="checkbox" id="${p}-x-driver" ${x.driver?"checked":""}> ${t("x_driver")}<span class="p">${money(EX.driver)} ${t("per_day_short")}</span></label>
+    <label class="extra"><input type="checkbox" id="${p}-x-ins" ${x.insurance?"checked":""}> <span>${t("x_ins")}<br><small style="color:var(--muted)">${t("x_ins_d")}</small></span><span class="p">${money(EX.insurance)} ${t("per_day_short")}</span></label>
+    <label class="extra"><span>${t("x_seat")}</span> <select id="${p}-x-seats" aria-label="${t("x_seat")}">${[0,1,2].map(n=>`<option value="${n}" ${x.seats===n?"selected":""}>${n}</option>`).join("")}</select><span class="p">${money(EX.seat)} ${t("per_day_short")}</span></label>
+    <label class="extra"><input type="checkbox" id="${p}-x-del" ${x.delivery?"checked":""}> ${t("x_delivery")}<span class="p">${money(EX.delivery)} ${t("flat")}</span></label>`;
+}
+const readExtras=p=>({driver:$(p+"-x-driver").checked,insurance:$(p+"-x-ins").checked,seats:+$(p+"-x-seats").value,delivery:$(p+"-x-del").checked});
+function sumHTML(tmp,fmtFn=money){
+  const p=priceOf(tmp);
+  return p.items.map(i=>`<div class="ln"><span>${t(i.k)} · ${i.u==null?t("flat"):i.q+" "+fmtFn(i.u)}</span><span>${fmtFn(i.v)}</span></div>`).join("")+`<div class="tot"><span>${t("total")}</span><span>${fmtFn(p.total)}</span></div><div class="dep">${t("deposit_l")}: ${fmtFn(tmp.deposit.amount)}</div>`;
+}
+function draftFromForm(){
+  const carId=$("bk-car").value,car=carById(carId);
+  const rate=BK.id&&BK.carId===carId?BK.rate:car.rate;
+  return {...BK,carId,rate,start:$("bk-start").value,end:$("bk-end").value,loc:$("bk-loc").value,extras:readExtras("bk"),hotel:$("bk-hotel").value.trim(),note:$("bk-note").value.trim(),deposit:{...BK.deposit,amount:+$("bk-dep").value||0}};
+}
+function bindDetails(){
+  const f=$("bk-form"),upd=()=>{const d=draftFromForm();$("bk-hotel-wrap").hidden=!d.extras.delivery;$("bk-sum").innerHTML=d.start&&d.end&&d.end>d.start?sumHTML(d):"—"};
+  f.addEventListener("input",upd);upd();
+  $("bk-car").addEventListener("change",()=>{if(!BK.id)$("bk-dep").value=carById($("bk-car").value).deposit;upd()});
+  $("bk-start").addEventListener("change",()=>{if($("bk-end").value<=$("bk-start").value)$("bk-end").value=addDays($("bk-start").value,1);upd()});
+  $("bk-customer").addEventListener("change",()=>{const u=DB.customers.find(c=>c.name.toLowerCase()===$("bk-customer").value.trim().toLowerCase());if(u&&!$("bk-phone").value)$("bk-phone").value=u.phone});
+  f.addEventListener("submit",e=>{e.preventDefault();saveDetails(false)});
+  $("bk-approve")?.addEventListener("click",()=>saveDetails(true));
+  $("bk-del")?.addEventListener("click",e=>{const btn=e.currentTarget;if(!btn.classList.contains("armed")){btn.classList.add("armed");btn.textContent=t("confirm");return}
+    DB.bookings=DB.bookings.filter(x=>x!==BK);save();$("dlg-bk").close();toast(t("t_deleted"));render()});
+}
+function saveDetails(approve){
+  const d=draftFromForm(),name=$("bk-customer").value.trim(),err=m=>{$("bk-err").textContent=m;$("bk-err").hidden=false};
+  if(!name)return err(t("e_name"));
+  if(!d.start||!d.end||d.end<=d.start)return err(t("e_dates"));
+  if((!BK.id||BK.carId!==d.carId)&&carById(d.carId).service)return err(t("e_service"));
+  const swapped=BK.swaps&&BK.swaps.length;
+  const dSegs=swapped?occ(BK).map((x,i,a)=>i===a.length-1?{...x,end:d.end}:{...x}):[{carId:d.carId,start:d.start,end:d.end}];
+  if(swapped&&dSegs[dSegs.length-1].end<=dSegs[dSegs.length-1].start)return err(t("e_dates"));
+  let clash=null;for(const sg of dSegs){const hit=occAll(sg.carId).find(x=>x.b!==BK&&sg.start<x.end&&sg.end>x.start);if(hit){clash=hit;break}}
+  if(clash)return err(t("e_overlap",{who:custById(clash.b.customerId)?.name,a:fmt(clash.start),b:fmt(clash.end)}));
+  if(swapped)d.segs=dSegs;
+  let u=DB.customers.find(c=>c.name.toLowerCase()===name.toLowerCase());
+  if(u&&u.blacklist&&!ackBlack){ackBlack=true;return err(t("e_black",{r:bil(u.reason)}))}
+  if(!u){u={id:"u"+(++DB.seq),name,phone:$("bk-phone").value.trim(),email:"",country:"",docs:{license:false,passport:false},docImg:{},blacklist:false,reason:""};DB.customers.push(u)}
+  else if($("bk-phone").value.trim())u.phone=$("bk-phone").value.trim();
+  d.customerId=u.id;
+  if(approve)d.status="confirmed";
+  if(BK.id)Object.assign(BK,d);else{d.id="B-"+(++DB.seq);DB.bookings.push(d);BK=d}
+  if(!save())return;
+  toast(approve?t("t_approved"):t("t_saved"));render();renderBk();
+}
+
+/* inspection */
+function makeDraft(mode){
+  const b=BK,car=carById(b.carId);
+  if(b[mode]){const d=clone(b[mode]);d.shots=d.shots||{};d.clean=d.clean||1;d.photos=d.photos||[];return d}
+  if(mode==="out")return{km:car.km,fuel:8,clean:1,damages:clone(car.damages||[]),photos:[],shots:{},at:null};
+  const base=outBase(b);
+  return{km:base.km+100,fuel:base.fuel,clean:base.clean||1,damages:[],photos:[],shots:{},at:null,dmgFee:0,withheld:null};
+}
+function chargesFor(base,d){
+  const items=[],nf=(base.fuel||8)-d.fuel;
+  if(nf>0)items.push({l:t("fee_fuel",{n:nf,f:money(FEE.fuel8)}),v:nf*FEE.fuel8});
+  if(d.clean>(base.clean||1)&&FEE.clean[d.clean])items.push({l:t("fee_clean",{l:t("cl_"+d.clean)}),v:FEE.clean[d.clean]});
+  const dmg=Math.max(0,+d.dmgFee||0);
+  return{items,dmg,total:items.reduce((x,i)=>x+i.v,0)+dmg};
+}
+let dmgType="scratch";
+function diagramSVG(mode){
+  const base=mode==="in"?(outBase(BK).damages||[]):[];
+  const mk=(d,i,old)=>`<g ${old?"":`data-dm="${i}" style="cursor:pointer"`}><circle cx="${d.x}" cy="${d.y}" r="9" fill="${old?"var(--past)":"var(--bad)"}" stroke="var(--surface)" stroke-width="2"/><text x="${d.x}" y="${d.y+3.6}" text-anchor="middle" font-size="10" font-weight="800" fill="${old?"var(--past-ink)":"#fff"}" style="pointer-events:none">${DMG[d.t]}</text></g>`;
+  return `<svg class="diagram" id="dmg-svg" viewBox="0 0 160 310" role="img" aria-label="Damage diagram">
+    <text x="80" y="12" text-anchor="middle" font-size="9" font-weight="700" fill="var(--muted)">${t("front").toUpperCase()}</text>
+    <text x="80" y="306" text-anchor="middle" font-size="9" font-weight="700" fill="var(--muted)">${t("rear").toUpperCase()}</text>
+    <rect x="14" y="56" width="10" height="34" rx="3" fill="var(--ink)" opacity=".7"/><rect x="136" y="56" width="10" height="34" rx="3" fill="var(--ink)" opacity=".7"/>
+    <rect x="14" y="210" width="10" height="34" rx="3" fill="var(--ink)" opacity=".7"/><rect x="136" y="210" width="10" height="34" rx="3" fill="var(--ink)" opacity=".7"/>
+    <rect x="22" y="20" width="116" height="272" rx="38" fill="var(--surface)" stroke="var(--muted)" stroke-width="2"/>
+    <path d="M36 92 Q80 76 124 92 L118 122 Q80 112 42 122 Z" fill="var(--line)"/>
+    <rect x="42" y="128" width="76" height="80" rx="8" fill="none" stroke="var(--line)" stroke-width="2"/>
+    <path d="M42 214 Q80 222 118 214 L124 240 Q80 252 36 240 Z" fill="var(--line)"/>
+    <path d="M30 34 Q80 22 130 34" fill="none" stroke="var(--line)" stroke-width="2"/>
+    <rect x="12" y="100" width="12" height="7" rx="2" fill="var(--muted)"/><rect x="136" y="100" width="12" height="7" rx="2" fill="var(--muted)"/>
+    ${base.map((d,i)=>mk(d,i,true)).join("")}${insp.damages.map((d,i)=>mk(d,i,false)).join("")}
+  </svg>`;
+}
+function renderInsp(){
+  const mode=bkTab,b=BK,locked=!!b[mode],pane=$("insp-pane");
+  if(mode==="in"&&!b.out){pane.innerHTML=`<p class="empty">${t("out_first")}</p>`;return}
+  const base=mode==="in"?outBase(b):null;
+  const dl=(arr,old,tag)=>arr.map(d=>`<div><span class="mk ${old?"old":""}">${DMG[d.t]}</span>${t("dm_"+d.t)}${tag?` <span class="stamp">· ${t(tag)}</span>`:""}</div>`).join("");
+  const shotBox=k=>{const img=insp.shots[k];
+    if(img)return `<div class="box"><img src="${img}" alt="${t("sh_"+k)}">${locked?"":`<button type="button" class="rm" data-rmshot="${k}" aria-label="${t("remove")}">✕</button>`}</div>`;
+    return locked?`<div class="box">—</div>`:`<label class="box">${t("add_shot")}<input type="file" accept="image/*" data-shot="${k}"></label>`};
+  const shots=SHOTS.map(k=>`<div class="shot"><span class="nm">${t("sh_"+k)}</span>${mode==="in"
+    ?`<div class="pair"><div><div class="box">${base.shots&&base.shots[k]?`<img src="${base.shots[k]}" alt="">`:"—"}</div><span class="cap">${t("at_pickup")}</span></div><div>${shotBox(k)}<span class="cap">${t("at_return")}</span></div></div>`
+    :`<div class="pair one">${shotBox(k)}</div>`}</div>`).join("");
+  let cmp="";
+  if(mode==="in"){
+    const ch=chargesFor(base,insp),drove=insp.km-base.km,fd=base.fuel-insp.fuel,worse=insp.clean>(base.clean||1);
+    const wh=locked?(b.deposit.withheld||0):(insp.withheld==null?Math.min(b.deposit.amount,ch.total):insp.withheld);
+    cmp=`<div class="cmp"><b>${t("cmp_title")}</b>
+      <div class="ln"><span>${t("cmp_km")}</span><span class="num">${drove.toLocaleString("en-US")} km</span></div>
+      <div class="ln"><span>${t("cmp_fuel")}</span><span class="${fd>0?"t-warn":"t-ok"}">${base.fuel}/8 → ${insp.fuel}/8</span></div>
+      <div class="ln"><span>${t("clean_l")}</span><span class="${worse?"t-warn":"t-ok"}">${t("cl_"+(base.clean||1))} → ${t("cl_"+insp.clean)}</span></div>
+      <div class="ln"><span>${t("cmp_dmg")}</span><span class="${insp.damages.length?"t-bad":"t-ok"}">${insp.damages.length}</span></div></div>
+    <div class="cmp"><b>${t("charges")}</b>
+      ${ch.items.map(i=>`<div class="ln"><span>${esc(i.l)}</span><span class="num">${money(i.v)}</span></div>`).join("")}
+      <div class="ln"><label for="in-dmgfee">${t("dmg_fee")}</label><input id="in-dmgfee" type="number" min="0" step="10" value="${ch.dmg}" ${locked?"disabled":""}></div>
+      <div class="ln" style="font-weight:800;border-top:1px solid var(--line);padding-top:6px;margin-top:2px"><span>${t("charges_total")}</span><span class="num">${money(ch.total)}</span></div></div>
+    <div class="cmp"><b>${t("dep_title")} · ${money(b.deposit.amount)}</b>
+      <div class="ln"><label for="in-wh">${t("dep_amount")}</label><input id="in-wh" type="number" min="0" max="${b.deposit.amount}" value="${wh}" ${locked?"disabled":""}></div>
+      <div class="ln"><span>${t("dep_back")}</span><span class="num t-ok">${money(b.deposit.amount-wh)}</span></div>
+      ${ch.total>b.deposit.amount?`<div class="t-warn">${t("over_dep",{a:money(ch.total-b.deposit.amount)})}</div>`:""}</div>`;
+  }
+  pane.innerHTML=`<div class="insp">
+    <div><div class="dmg-types">${Object.keys(DMG).map(k=>`<button type="button" data-dmt="${k}" aria-pressed="${k===dmgType}" ${locked?"disabled":""}>${DMG[k]} · ${t("dm_"+k)}</button>`).join("")}</div>
+      ${diagramSVG(mode)}<p class="hint">${locked?(insp.at?t("recorded",{d:fmtStamp(insp.at)}):""):t("dmg_hint")}</p></div>
+    <div class="side">
+      <div class="fm" style="grid-template-columns:1fr"><div class="fld"><label for="ins-km">${t("f_km")}</label><input id="ins-km" type="number" min="0" value="${insp.km}" ${locked?"disabled":""}></div></div>
+      <div><span class="lbl">${t("fuel_l")} · ${insp.fuel}/8</span><div class="fuel" style="margin-top:6px">${[1,2,3,4,5,6,7,8].map(n=>`<button type="button" data-fuel="${n}" class="${n<=insp.fuel?"on":""}" aria-label="${n}/8" ${locked?"disabled":""}></button>`).join("")}</div><div class="fuel-lbl"><span>${t("fuel_e")}</span><span>${t("fuel_f")}</span></div></div>
+      <div><span class="lbl">${t("clean_l")}</span><div class="seg" style="margin-top:6px">${CLEAN.map(n=>`<button type="button" data-clean="${n}" aria-pressed="${n===insp.clean}" ${locked?"disabled":""}>${t("cl_"+n)}</button>`).join("")}</div></div>
+      <div class="dmg-list">${mode==="in"?dl(base.damages||[],true,"dmg_old"):""}${dl(insp.damages,false,mode==="in"?"dmg_new":null)}${!insp.damages.length&&!(mode==="in"&&(base.damages||[]).length)?`<span class="stamp">${t("dmg_none")}</span>`:""}</div>
+    </div>
+    <div class="wide"><span class="lbl">${t("shots_t")}</span><div class="shots" style="margin-top:6px">${shots}</div></div>
+    <div class="wide"><span class="lbl">${t("extra_photos")} · ${insp.photos.length}</span>
+      <div class="photos" style="margin-top:6px">${insp.photos.map((ph,i)=>`<figure><img src="${ph}" alt="${t("photos")} ${i+1}">${locked?"":`<button type="button" data-rmph="${i}" aria-label="${t("remove")}">✕</button>`}</figure>`).join("")}</div>
+      ${locked?"":`<label class="file-btn" style="margin-top:8px">📷 ${t("add_photos")}<input type="file" accept="image/*" multiple id="ins-photos"></label>`}</div>
+    ${cmp?`<div class="wide" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px">${cmp}</div>`:""}
+    ${locked?"":`<div class="wide actions" style="margin-top:0"><button class="btn primary" type="button" id="ins-save">${mode==="out"?t("save_out"):t("save_in")}</button></div>`}
+  </div>`;
+  if(locked)return;
+  pane.querySelector("#dmg-svg").addEventListener("click",e=>{
+    const g=e.target.closest("[data-dm]");
+    if(g){insp.damages.splice(+g.dataset.dm,1);renderInsp();return}
+    const svg=e.currentTarget,pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const q=pt.matrixTransform(svg.getScreenCTM().inverse());
+    if(q.x<8||q.x>152||q.y<16||q.y>296)return;
+    insp.damages.push({x:Math.round(q.x),y:Math.round(q.y),t:dmgType});renderInsp();
+  });
+  pane.querySelectorAll("[data-dmt]").forEach(x=>x.onclick=()=>{dmgType=x.dataset.dmt;renderInsp()});
+  pane.querySelectorAll("[data-fuel]").forEach(x=>x.onclick=()=>{insp.fuel=+x.dataset.fuel;insp.withheld=null;renderInsp()});
+  pane.querySelectorAll("[data-clean]").forEach(x=>x.onclick=()=>{insp.clean=+x.dataset.clean;insp.withheld=null;renderInsp()});
+  pane.querySelectorAll("[data-rmph]").forEach(x=>x.onclick=()=>{insp.photos.splice(+x.dataset.rmph,1);renderInsp()});
+  pane.querySelectorAll("[data-rmshot]").forEach(x=>x.onclick=()=>{delete insp.shots[x.dataset.rmshot];renderInsp()});
+  pane.querySelectorAll("[data-shot]").forEach(inp=>inp.addEventListener("change",async e=>{const f=e.target.files[0];if(!f)return;try{insp.shots[inp.dataset.shot]=await readImage(f,640)}catch(_){}renderInsp()}));
+  $("ins-km").addEventListener("change",e=>{insp.km=+e.target.value||0;renderInsp()});
+  $("ins-photos").addEventListener("change",async e=>{for(const f of e.target.files){try{insp.photos.push(await readImage(f,640))}catch(_){}}renderInsp()});
+  $("in-dmgfee")?.addEventListener("change",e=>{insp.dmgFee=Math.max(0,+e.target.value||0);insp.withheld=null;renderInsp()});
+  $("in-wh")?.addEventListener("change",e=>{insp.withheld=Math.min(b.deposit.amount,Math.max(0,+e.target.value||0));renderInsp()});
+  $("ins-save").onclick=()=>{
+    const car=carById(b.carId);insp.at=nowStamp();
+    if(mode==="out"){b.out=insp;b.deposit.status="held";car.km=Math.max(car.km,insp.km);toast(t("t_out"))}
+    else{const ch=chargesFor(base,insp),w=insp.withheld==null?Math.min(b.deposit.amount,ch.total):insp.withheld;
+      b.in={...insp,charges:ch.total,withheld:w};b.deposit={...b.deposit,status:w>0?"withheld":"returned",withheld:w};
+      car.km=Math.max(car.km,insp.km);car.damages=[...(base.damages||[]),...insp.damages];toast(t("t_in"))}
+    if(save()){render();renderBk()}
+  };
+}
+
+/* swap */
+function renderSwap(){
+  const b=BK,pane=$("swap-pane"),cur=carById(b.carId),base=outBase(b),segs=occ(b),last=segs[segs.length-1];
+  const minD=addDays(last.start,1),maxD=addDays(b.end,-1);
+  const hist=(b.swaps||[]).map(sw=>`<div class="ln"><span>${fmt(sw.at)} · ${esc(carById(sw.from)?.plate||"")} → ${esc(carById(sw.to)?.plate||"")}</span><span>${t("sr_"+sw.reason)}${sw.note?" · "+esc(bil(sw.note)):""}</span></div>`).join("");
+  const head=`<h3 style="margin:0 0 4px;font-size:16px">${t("swap_title")}</h3><p class="sub">${t("swap_d")}</p>${hist?`<div class="cmp" style="margin-top:12px"><b>${t("swap_hist")}</b>${hist}</div>`:""}`;
+  if(minD>maxD){pane.innerHTML=head+`<p class="empty">${t("swap_short")}</p>`;return}
+  const defD=TODAY>=minD&&TODAY<=maxD?TODAY:minD;
+  const fuelSel=(id,v)=>`<select id="${id}">${[1,2,3,4,5,6,7,8].map(n=>`<option value="${n}" ${n===v?"selected":""}>${n}/8</option>`).join("")}</select>`;
+  const cleanSel=(id,v)=>`<select id="${id}">${CLEAN.map(n=>`<option value="${n}" ${n===v?"selected":""}>${t("cl_"+n)}</option>`).join("")}</select>`;
+  pane.innerHTML=head+`<form class="fm" id="sw-form" novalidate style="margin-top:14px">
+    <div class="fld"><label for="sw-date">${t("swap_date")}</label><input id="sw-date" type="date" min="${minD}" max="${maxD}" value="${defD}"></div>
+    <div class="fld"><label for="sw-reason">${t("swap_reason")}</label><select id="sw-reason">${SWAP_R.map(k=>`<option value="${k}">${t("sr_"+k)}</option>`).join("")}</select></div>
+    <div class="fld full"><label for="sw-note">${t("f_note")}</label><input id="sw-note" autocomplete="off"></div>
+    <div class="fld full"><span class="lbl">${t("swap_old")} · ${esc(cur.plate)} · ${esc(carLabel(cur))}</span></div>
+    <div class="fld"><label for="sw-okm">${t("f_km")}</label><input id="sw-okm" type="number" min="0" value="${Math.max(cur.km,base.km)}"></div>
+    <div class="fld"><label for="sw-ofuel">${t("fuel_l")}</label>${fuelSel("sw-ofuel",base.fuel)}</div>
+    <div class="fld"><label for="sw-oclean">${t("clean_l")}</label>${cleanSel("sw-oclean",base.clean||1)}</div>
+    <label class="check" style="align-self:end;padding-bottom:8px"><input type="checkbox" id="sw-svc" checked> ${t("swap_service")}</label>
+    <div class="fld full"><span class="lbl">${t("swap_new")}</span></div>
+    <div class="fld full"><label for="sw-car">${t("f_car")}</label><select id="sw-car"></select></div>
+    <div class="fld"><label for="sw-nkm">${t("f_km")}</label><input id="sw-nkm" type="number" min="0"></div>
+    <div class="fld"><label for="sw-nfuel">${t("fuel_l")}</label>${fuelSel("sw-nfuel",8)}</div>
+    <div class="info-box">${t("swap_price",{r:money(b.rate)})}</div>
+    <div class="err" id="sw-err" hidden></div>
+    <div class="actions"><button class="btn primary" type="submit" id="sw-go">${t("swap_btn")}</button></div></form>`;
+  const free=d=>DB.cars.filter(c=>c.id!==b.carId&&!c.service&&!occAll(c.id).some(x=>x.b!==b&&d<x.end&&b.end>x.start));
+  const fill=()=>{const list=free($("sw-date").value||defD);
+    $("sw-car").innerHTML=list.map(c=>`<option value="${c.id}">${esc(c.plate)} · ${esc(carLabel(c))} · ${t("cls")[c.cls]}</option>`).join("");
+    $("sw-go").disabled=!list.length;$("sw-err").hidden=!!list.length;if(!list.length)$("sw-err").textContent=t("swap_none");
+    $("sw-nkm").value=list[0]?list[0].km:""};
+  fill();
+  $("sw-date").addEventListener("change",fill);
+  $("sw-car").addEventListener("change",()=>{$("sw-nkm").value=carById($("sw-car").value).km});
+  $("sw-form").addEventListener("submit",e=>{e.preventDefault();
+    const d=$("sw-date").value,nid=$("sw-car").value,nc=carById(nid),err=m=>{$("sw-err").textContent=m;$("sw-err").hidden=false};
+    if(!d||d<minD||d>maxD)return err(t("e_dates"));
+    if(!nc||occAll(nid).some(x=>x.b!==b&&d<x.end&&b.end>x.start))return err(t("e_swap_busy"));
+    const ns=segs.map(x=>({...x}));ns[ns.length-1].end=d;ns.push({carId:nid,start:d,end:b.end});
+    const okm=+$("sw-okm").value||cur.km,nkm=+$("sw-nkm").value||nc.km;
+    b.segs=ns;
+    b.swaps=[...(b.swaps||[]),{at:d,from:b.carId,to:nid,reason:$("sw-reason").value,note:$("sw-note").value.trim(),oldKm:okm,oldFuel:+$("sw-ofuel").value,oldClean:+$("sw-oclean").value,newKm:nkm,newFuel:+$("sw-nfuel").value,newClean:1,newDamages:clone(nc.damages||[])}];
+    cur.km=Math.max(cur.km,okm);if($("sw-svc").checked)cur.service=true;
+    nc.km=Math.max(nc.km,nkm);b.carId=nid;
+    if(save()){toast(t("t_swapped"));render();renderBk()}
+  });
+}
+
+/* contract */
+function contractHTML(){
+  const b=BK,c=carById(b.carId),u=custById(b.customerId),p=priceOf(b);
+  const sigImg=b.signature&&b.signature!=="seed"?`<img src="${b.signature}" alt="${t("signed")}">`:"";
+  return `<div class="pane">
+    <div class="paper">
+      <h4>${t("c_title")}</h4><div class="no">${t("c_no",{n:b.id,d:fmtFull(b.start)})}</div>
+      <table>
+        <tr><td>${t("c_company")}</td><td>Demo Rent LLC · ${esc(t("loc").office)}</td></tr>
+        <tr><td>${t("c_client")}</td><td>${esc(u?.name)} · ${esc(u?.phone)}${u?.country?" · "+esc(region(u.country)):""}</td></tr>
+        <tr><td>${t("c_vehicle")}</td><td>${esc(carLabel(c))} ${esc(c.year)} · ${esc(c.plate)}</td></tr>
+        ${(b.swaps||[]).map(sw=>`<tr><td>⇄</td><td>${esc(t("c_swap",{d:fmtFull(sw.at),a:carById(sw.from)?.plate||"",b:carById(sw.to)?.plate||"",r:t("sr_"+sw.reason)}))}</td></tr>`).join("")}
+        <tr><td>${t("c_period")}</td><td>${fmtFull(b.start)} – ${fmtFull(b.end)} (${t("days",{n:bDays(b)})})</td></tr>
+        <tr><td>${t("c_place")}</td><td>${esc(t("loc")[b.loc])}</td></tr>
+        ${b.out?`<tr><td>${t("f_km")} / ${t("fuel_l")}</td><td>${b.out.km.toLocaleString("en-US")} km · ${b.out.fuel}/8</td></tr>`:""}
+      </table>
+      <table>${p.items.map(i=>`<tr><td>${t(i.k)} · ${i.u==null?t("flat"):i.q+" "+money(i.u)}</td><td>${money(i.v)}</td></tr>`).join("")}
+        <tr><td><b>${t("total")}</b></td><td><b>${money(p.total)}</b></td></tr><tr><td>${t("deposit_l")}</td><td>${money(b.deposit.amount)}</td></tr></table>
+      <b>${t("c_terms")}</b><ol>${[1,2,3,4,5,6].map(n=>`<li>${t("c_t"+n)}</li>`).join("")}</ol>
+      <div class="sigs"><div>${t("c_sign_co")}</div><div>${sigImg}${t("c_sign_cl")}${b.signature?` · <b style="color:#17834A">${t("signed")}</b>`:""}</div></div>
+    </div>
+    <div class="sigpad"><span class="lbl">${t("sig_title")} · ${b.signature?t("signed"):t("unsigned")}</span><p class="hint" style="margin:2px 0 6px">${t("sig_hint")}</p>
+      <canvas id="sig-c" width="900" height="210"></canvas>
+      <div class="row"><span class="stamp">${t("c_note")}</span><div style="display:flex;gap:8px"><button class="btn" type="button" id="sig-clear">${t("sig_clear")}</button><button class="btn primary" type="button" id="sig-save">${t("sig_save")}</button></div></div></div>
+  </div>`;
+}
+function bindSig(){
+  const cv=$("sig-c"),ctx=cv.getContext("2d");let drawing=false;sigDirty=false;
+  ctx.lineWidth=3.2;ctx.lineCap="round";ctx.lineJoin="round";ctx.strokeStyle="#14204A";
+  const pos=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*cv.width/r.width,(e.clientY-r.top)*cv.height/r.height]};
+  cv.addEventListener("pointerdown",e=>{drawing=true;sigDirty=true;cv.setPointerCapture(e.pointerId);const[x,y]=pos(e);ctx.beginPath();ctx.moveTo(x,y)});
+  cv.addEventListener("pointermove",e=>{if(!drawing)return;const[x,y]=pos(e);ctx.lineTo(x,y);ctx.stroke()});
+  cv.addEventListener("pointerup",()=>drawing=false);cv.addEventListener("pointercancel",()=>drawing=false);
+  $("sig-clear").onclick=()=>{ctx.clearRect(0,0,cv.width,cv.height);sigDirty=false};
+  $("sig-save").onclick=()=>{if(!sigDirty)return;
+    const out=document.createElement("canvas");out.width=450;out.height=105;out.getContext("2d").drawImage(cv,0,0,450,105);
+    BK.signature=out.toDataURL("image/png");if(save()){toast(t("t_signed"));renderBk()}};
+}
+
+/* ---------- car dialog ---------- */
+let CAR=null,carPhoto=null;
+function openCar(c){
+  CAR=c||null;carPhoto=c?c.photo:null;const mgr=isMgr(),d=c||{plate:"",year:2020,make:"",model:"",cls:"compact",rate:120,trans:"auto",fuel:"petrol",color:"#8A94A6",service:false,km:0,oilKm:0,oilEvery:10000,insUntil:addDays(TODAY,365),inspUntil:addDays(TODAY,365),deposit:300};
+  $("car-title").textContent=c?t("car_edit"):t("car_new");
+  const sel=(id,obj,v)=>`<select id="${id}">${Object.entries(obj).map(([k,l])=>`<option value="${k}" ${k===v?"selected":""}>${esc(l)}</option>`).join("")}</select>`;
+  const rem=c?remindersFor(c):[];
+  $("car-body").innerHTML=`<form class="fm padded" id="car-form" novalidate>
+    ${rem.length?`<div class="info-box" style="color:var(--warn);font-weight:600">${rem.map(r=>esc(r.txt)).join("<br>")}</div>`:""}
+    <div class="fld"><label for="cf-plate">${t("f_plate")}</label><input id="cf-plate" placeholder="AA-123-BB" autocomplete="off" style="text-transform:uppercase" value="${esc(d.plate)}"></div>
+    <div class="fld"><label for="cf-year">${t("f_year")}</label><input id="cf-year" type="number" min="1990" max="2027" value="${d.year}"></div>
+    <div class="fld"><label for="cf-make">${t("f_make")}</label><input id="cf-make" autocomplete="off" value="${esc(d.make)}"></div>
+    <div class="fld"><label for="cf-model">${t("f_model")}</label><input id="cf-model" autocomplete="off" value="${esc(d.model)}"></div>
+    <div class="fld"><label for="cf-class">${t("f_class")}</label>${sel("cf-class",t("cls"),d.cls)}</div>
+    <div class="fld"><label for="cf-rate">${t("f_rate")}</label><input id="cf-rate" type="number" min="1" step="5" value="${d.rate}" ${mgr?"":"disabled"}></div>
+    <div class="fld"><label for="cf-trans">${t("f_trans")}</label>${sel("cf-trans",t("trans"),d.trans)}</div>
+    <div class="fld"><label for="cf-fuel">${t("f_fuel")}</label>${sel("cf-fuel",t("fuel"),d.fuel)}</div>
+    <div class="fld"><label for="cf-km">${t("f_km")}</label><input id="cf-km" type="number" min="0" value="${d.km}"></div>
+    <div class="fld"><label for="cf-dep">${t("f_deposit")}</label><input id="cf-dep" type="number" min="0" step="50" value="${d.deposit}" ${mgr?"":"disabled"}></div>
+    <div class="fld"><label for="cf-oil">${t("f_oil_km")}</label><input id="cf-oil" type="number" min="0" value="${d.oilKm}"></div>
+    <div class="fld"><label for="cf-oilev">${t("f_oil_every")}</label><input id="cf-oilev" type="number" min="1000" step="500" value="${d.oilEvery}"></div>
+    <div class="fld"><label for="cf-ins">${t("f_ins")}</label><input id="cf-ins" type="date" value="${d.insUntil}"></div>
+    <div class="fld"><label for="cf-insp">${t("f_insp")}</label><input id="cf-insp" type="date" value="${d.inspUntil}"></div>
+    <div class="fld full"><span class="lbl">${t("f_photo")}</span>
+      <div style="display:grid;grid-template-columns:180px 1fr;gap:12px;align-items:center"><div class="car-card" style="padding:0;border:0"><div class="art" id="cf-art"></div></div>
+      <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start"><label class="file-btn">📷 ${t("upload_photo")}<input type="file" accept="image/*" id="cf-photo"></label>
+      <button class="btn ghost sm" type="button" id="cf-rmph">${t("remove")}</button>
+      <label class="check" style="font-size:12.5px">${t("f_color")} <input type="color" id="cf-color" value="${esc(d.color||"#8A94A6")}"></label></div></div></div>
+    <label class="check full"><input type="checkbox" id="cf-service" ${d.service?"checked":""}> ${t("f_service")}</label>
+    <div class="err" id="cf-err" hidden></div>
+    <div class="actions">${c&&mgr?`<button class="btn danger spacer" type="button" id="cf-del">${t("delete")}</button>`:'<span class="spacer"></span>'}
+      <button class="btn" type="button" data-close>${t("cancel")}</button><button class="btn primary" type="submit">${t("save")}</button></div></form>`;
+  const art=()=>{$("cf-art").innerHTML=carArt({...d,cls:$("cf-class").value,color:$("cf-color").value,photo:carPhoto,make:$("cf-make").value,model:$("cf-model").value})};art();
+  ["cf-class","cf-color"].forEach(id=>$(id).addEventListener("input",art));
+  $("cf-photo").addEventListener("change",async e=>{const f=e.target.files[0];if(f){try{carPhoto=await readImage(f,800);art()}catch(_){}}});
+  $("cf-rmph").onclick=()=>{carPhoto=null;art()};
+  $("car-form").addEventListener("submit",e=>{e.preventDefault();
+    const rec={plate:$("cf-plate").value.trim().toUpperCase(),year:+$("cf-year").value||"",make:$("cf-make").value.trim(),model:$("cf-model").value.trim(),cls:$("cf-class").value,rate:+$("cf-rate").value,trans:$("cf-trans").value,fuel:$("cf-fuel").value,
+      km:+$("cf-km").value||0,deposit:+$("cf-dep").value||0,oilKm:+$("cf-oil").value||0,oilEvery:+$("cf-oilev").value||10000,insUntil:$("cf-ins").value,inspUntil:$("cf-insp").value,color:$("cf-color").value,photo:carPhoto,service:$("cf-service").checked};
+    if(!rec.plate||!rec.make||!rec.model||!(rec.rate>0)){$("cf-err").textContent=t("e_car");$("cf-err").hidden=false;return}
+    if(CAR)Object.assign(CAR,rec);else DB.cars.push({id:"c"+(++DB.seq),damages:[],...rec});
+    if(save()){$("dlg-car").close();toast(t("t_saved"));render()}});
+  $("cf-del")?.addEventListener("click",e=>{const btn=e.currentTarget;if(!btn.classList.contains("armed")){btn.classList.add("armed");btn.textContent=t("confirm");return}
+    DB.bookings=DB.bookings.filter(b=>b.carId!==CAR.id);DB.cars=DB.cars.filter(x=>x!==CAR);save();$("dlg-car").close();toast(t("t_deleted"));render()});
+  bindClose($("dlg-car"));$("dlg-car").showModal();
+}
+
+/* ---------- customer dialog ---------- */
+let CU=null;
+function openCust(u){
+  CU=u;const imgs={...(u.docImg||{})},mgr=isMgr();
+  $("cust-title").textContent=t("cust_edit");
+  const hist=DB.bookings.filter(b=>b.customerId===u.id).sort((a,b)=>b.start.localeCompare(a.start));
+  const docCard=k=>`<div class="doc-card"><span class="lbl">${t("doc_"+k)}</span>${imgs[k]?`<img src="${imgs[k]}" alt="${t("doc_"+k)}">`:`<div class="ph">${u.docs[k]?"✓ "+t("verified"):t("not_uploaded")}</div>`}
+    <label class="file-btn">📎 ${t("upload_photo")}<input type="file" accept="image/*" data-doc="${k}"></label>
+    <label class="check" style="font-size:12.5px"><input type="checkbox" id="cu-v-${k}" ${u.docs[k]?"checked":""}> ${t("verified")}</label></div>`;
+  $("cust-body").innerHTML=`<form class="fm padded" id="cu-form" novalidate>
+    <div class="fld full"><label for="cu-name">${t("h_name")}</label><input id="cu-name" value="${esc(u.name)}" autocomplete="off"></div>
+    <div class="fld"><label for="cu-phone">${t("f_phone")}</label><input id="cu-phone" value="${esc(u.phone)}" autocomplete="off"></div>
+    <div class="fld"><label for="cu-email">${t("f_email")}</label><input id="cu-email" type="email" value="${esc(u.email||"")}" autocomplete="off"></div>
+    <div class="fld full"><label for="cu-country">${t("f_country")}</label><select id="cu-country"><option value=""></option>${[...new Set([...COUNTRIES,u.country].filter(Boolean))].map(c=>`<option value="${c}" ${c===u.country?"selected":""}>${esc(region(c))}</option>`).join("")}</select></div>
+    <div class="fld full"><div class="doc-up" id="cu-docs">${docCard("license")}${docCard("passport")}</div></div>
+    <label class="check full ${mgr?"":"mgr-only"}"><input type="checkbox" id="cu-black" ${u.blacklist?"checked":""}> <span style="color:var(--bad)">${t("black_set")}</span></label>
+    <div class="fld full" id="cu-reason-wrap" ${u.blacklist?"":"hidden"}><label for="cu-reason">${t("black_reason")}</label><input id="cu-reason" value="${esc(bil(u.reason))}" autocomplete="off" ${mgr?"":"disabled"}></div>
+    <div class="hist"><span class="lbl">${t("history")} · ${hist.length}</span><div class="list" style="margin-top:4px">${hist.map(b=>{const c=carById(b.carId),st=bkState(b);return `<button class="item" type="button" data-booking="${b.id}"><span class="date-chip">${fmt(b.start)}</span><div style="min-width:0"><div class="who">${esc(carLabel(c))} · ${b.id}</div><div class="meta">${fmt(b.start)} – ${fmt(b.end)}${b.deposit.status==="withheld"?` · <span style="color:var(--bad)">${t("dep_withheld",{a:money(b.deposit.withheld)})}</span>`:""}</div></div><div class="right"><b>${money(priceOf(b).total)}</b><span class="pill s-${st}">${t("bs_"+st)}</span></div></button>`}).join("")||`<div class="empty">${t("no_history")}</div>`}</div></div>
+    <div class="actions"><span class="spacer"></span><button class="btn" type="button" data-close>${t("cancel")}</button><button class="btn primary" type="submit">${t("save")}</button></div></form>`;
+  $("cust-body").querySelectorAll("[data-doc]").forEach(inp=>inp.addEventListener("change",async e=>{const f=e.target.files[0];if(!f)return;try{const img=await readImage(f,900);imgs[inp.dataset.doc]=img;const card=inp.closest(".doc-card");const ph=card.querySelector(".ph,img");const im=document.createElement("img");im.src=img;im.alt="";ph.replaceWith(im);$("cu-v-"+inp.dataset.doc).checked=true}catch(_){}}));
+  $("cu-black").addEventListener("change",()=>$("cu-reason-wrap").hidden=!$("cu-black").checked);
+  $("cu-form").addEventListener("submit",e=>{e.preventDefault();
+    Object.assign(u,{name:$("cu-name").value.trim()||u.name,phone:$("cu-phone").value.trim(),email:$("cu-email").value.trim(),country:$("cu-country").value,docImg:imgs,docs:{license:$("cu-v-license").checked,passport:$("cu-v-passport").checked}});
+    if(mgr){u.blacklist=$("cu-black").checked;u.reason=u.blacklist?$("cu-reason").value.trim():""}
+    if(save()){$("dlg-cust").close();toast(t("t_saved"));render()}});
+  bindClose($("dlg-cust"));$("dlg-cust").showModal();
+}
+
+/* ---------- public site ---------- */
+function siteAvailable(c,s,e){return !c.service&&!occAll(c.id).some(x=>s<x.end&&e>x.start)}
+function renderSite(){
+  const n=Math.max(1,diff(SITE.start,SITE.end));
+  const cars=DB.cars.filter(c=>SITE.cls==="all"||c.cls===SITE.cls).map(c=>({c,ok:siteAvailable(c,SITE.start,SITE.end)})).sort((a,b)=>(b.ok-a.ok)||a.c.rate-b.c.rate);
+  const classes=["all",...new Set(DB.cars.map(c=>c.cls))];
+  const availN=DB.cars.filter(c=>siteAvailable(c,SITE.start,SITE.end)).length;
+  $("v-site").innerHTML=`<div class="site-frame">
+    <div class="site-bar"><span class="dots"><i></i><i></i><i></i></span><span class="url">demorent.ge</span></div>
+    <div class="site-top"><b>Demo Rent</b><span class="cities">${t("site_cities")}</span>
+      <select id="site-cur" aria-label="Currency">${Object.keys(CUR).map(k=>`<option ${k===SITE.cur?"selected":""}>${k}</option>`).join("")}</select></div>
+    <div class="hero"><h2>${t("site_h")}</h2><p>${t("site_p")}</p>
+      <form class="search" id="site-search" novalidate>
+        <div class="fld loc"><label for="ss-loc">${t("f_loc")}</label><select id="ss-loc">${Object.entries(t("loc")).map(([k,v])=>`<option value="${k}" ${k===SITE.loc?"selected":""}>${esc(v)}</option>`).join("")}</select></div>
+        <div class="fld"><label for="ss-start">${t("f_start")}</label><input id="ss-start" type="date" min="${TODAY}" value="${SITE.start}"></div>
+        <div class="fld"><label for="ss-end">${t("f_end")}</label><input id="ss-end" type="date" min="${addDays(TODAY,1)}" value="${SITE.end}"></div>
+        <button class="btn primary" type="submit">${t("site_search")}</button></form></div>
+    <div class="site-sec" style="border-top:0">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><b>${t("site_avail",{n:availN})}</b>
+        <div class="chips">${classes.map(k=>`<button class="chip" type="button" data-scls="${k}" aria-pressed="${SITE.cls===k}">${k==="all"?t("all"):t("cls")[k]}</button>`).join("")}</div></div>
+      <div class="cars-grid">${cars.map(({c,ok})=>`<div class="car-card ${ok?"":"na"}">
+        <div class="art">${carArt(c)}</div>
+        <span class="tag">${t("cls")[c.cls]}</span><h4>${esc(carLabel(c))}</h4>
+        <div class="specs"><span>${esc(c.year)}</span><span>${t("trans")[c.trans]}</span><span>${t("fuel")[c.fuel]}</span></div>
+        <div class="pr"><div><b>${cur(c.rate)}</b><small>${t("per_day")}</small><small>${t("site_total",{n})}: ${cur(c.rate*n)} · ${t("site_dep",{a:cur(c.deposit)})}</small></div>
+          ${ok?`<button class="btn primary" type="button" data-sbook="${c.id}">${t("site_book")}</button>`:`<span class="car-spec" style="text-align:right;max-width:110px">${t("site_na")}</span>`}</div></div>`).join("")}</div>
+      ${SITE.cur!=="GEL"?`<p class="hint">${t("cur_note")}</p>`:""}
+    </div>
+    <div class="site-sec"><h3>${t("how")}</h3><div class="steps">${[1,2,3].map(i=>`<div class="step"><div class="n">${i}</div><b>${t("how"+i)}</b><p>${t("how"+i+"d")}</p></div>`).join("")}</div></div>
+    <div class="site-sec two"><div><h3>${t("req_t")}</h3><ul>${[1,2,3,4,5].map(i=>`<li>${t("req"+i)}</li>`).join("")}</ul></div><div><h3>${t("incl_t")}</h3><ul>${[1,2,3,4].map(i=>`<li>${t("incl"+i)}</li>`).join("")}</ul></div></div>
+    <div class="site-sec rules"><h3>${t("rules_t")}</h3><ul>${L().rules.map(r=>`<li>${esc(r)}</li>`).join("")}</ul><p class="rules-note">${t("rules_note")}</p></div>
+  </div>`;
+  $("site-search").addEventListener("submit",e=>{e.preventDefault();const s=$("ss-start").value,en=$("ss-end").value;SITE.loc=$("ss-loc").value;if(s)SITE.start=s;SITE.end=en&&en>SITE.start?en:addDays(SITE.start,1);renderSite()});
+  $("site-cur").addEventListener("change",e=>{SITE.cur=e.target.value;renderSite()});
+}
+function openSiteBooking(carId){
+  const c=carById(carId),docs={};
+  const tmp=()=>({rate:c.rate,start:SITE.start,end:SITE.end,extras:readExtras("sb"),deposit:{amount:c.deposit}});
+  $("site-title").textContent=`${t("sb_title")} · ${carLabel(c)}`;
+  $("site-body").innerHTML=`<form class="fm padded" id="sb-form" novalidate style="padding-top:12px">
+    <div class="info-box" style="display:flex;gap:12px;align-items:center;color:var(--ink)"><div style="width:110px;flex:none" class="car-card"><div class="art" style="border-radius:6px">${carArt(c)}</div></div>
+      <div><b>${esc(carLabel(c))}</b><br><span style="color:var(--muted)">${fmtFull(SITE.start)} – ${fmtFull(SITE.end)} · ${esc(t("loc")[SITE.loc])}</span></div></div>
+    <div class="fld full"><span class="lbl">${t("extras")}</span></div>
+    <div class="extras">${extrasHTML({driver:false,seats:0,insurance:false,delivery:false},"sb")}</div>
+    <div class="fld full" id="sb-hotel-wrap" hidden><label for="sb-hotel">${t("f_hotel")}</label><input id="sb-hotel" autocomplete="off"></div>
+    <div class="fld full"><span class="lbl">${t("sb_contact")}</span></div>
+    <div class="fld"><label for="sb-name">${t("h_name")}</label><input id="sb-name" autocomplete="name"></div>
+    <div class="fld"><label for="sb-phone">${t("f_phone")}</label><input id="sb-phone" inputmode="tel" autocomplete="tel"></div>
+    <div class="fld"><label for="sb-email">${t("f_email")}</label><input id="sb-email" type="email" autocomplete="email"></div>
+    <div class="fld"><label for="sb-country">${t("f_country")}</label><select id="sb-country"><option value=""></option>${COUNTRIES.map(k=>`<option value="${k}">${esc(region(k))}</option>`).join("")}</select></div>
+    <div class="fld full"><span class="lbl">${t("sb_checkin")}</span><span class="hint" style="margin:0">${t("sb_checkin_d")}</span>
+      <div class="doc-up" style="margin-top:6px">${["license","passport"].map(k=>`<div class="doc-card"><span class="lbl">${t("doc_"+k)}</span><div class="ph" id="sb-ph-${k}">${t("not_uploaded")}</div><label class="file-btn">📎 ${t("upload_photo")}<input type="file" accept="image/*" data-sbdoc="${k}"></label></div>`).join("")}</div></div>
+    <div class="summary" id="sb-sum"></div>
+    <label class="check full"><input type="checkbox" id="sb-terms"> ${t("sb_terms")}</label>
+    <div class="err" id="sb-err" hidden></div>
+    <div class="actions"><button class="btn" type="button" data-close>${t("cancel")}</button><button class="btn primary" type="submit">${t("sb_send")}</button></div></form>`;
+  const upd=()=>{const x=tmp();$("sb-hotel-wrap").hidden=!x.extras.delivery;$("sb-sum").innerHTML=sumHTML(x,cur)};
+  $("sb-form").addEventListener("input",upd);upd();
+  $("site-body").querySelectorAll("[data-sbdoc]").forEach(inp=>inp.addEventListener("change",async e=>{const f=e.target.files[0];if(!f)return;try{docs[inp.dataset.sbdoc]=await readImage(f,900);$("sb-ph-"+inp.dataset.sbdoc).outerHTML=`<img src="${docs[inp.dataset.sbdoc]}" alt="">`}catch(_){}}));
+  $("sb-form").addEventListener("submit",e=>{e.preventDefault();
+    const err=m=>{$("sb-err").textContent=m;$("sb-err").hidden=false};
+    const name=$("sb-name").value.trim(),phone=$("sb-phone").value.trim();
+    if(!name||!phone)return err(t("e_contact"));
+    if(!$("sb-terms").checked)return err(t("e_terms"));
+    if(!siteAvailable(c,SITE.start,SITE.end))return err(t("site_na"));
+    let u=DB.customers.find(x=>x.name.toLowerCase()===name.toLowerCase());
+    if(!u){u={id:"u"+(++DB.seq),name,phone,email:"",country:"",docs:{license:false,passport:false},docImg:{},blacklist:false,reason:""};DB.customers.push(u)}
+    Object.assign(u,{phone,email:$("sb-email").value.trim()||u.email,country:$("sb-country").value||u.country});
+    u.docImg={...(u.docImg||{}),...docs};if(docs.license)u.docs.license=true;if(docs.passport)u.docs.passport=true;
+    const x=tmp(),id="B-"+(++DB.seq);
+    DB.bookings.push({id,carId:c.id,customerId:u.id,start:SITE.start,end:SITE.end,loc:SITE.loc,rate:c.rate,note:"",extras:x.extras,hotel:$("sb-hotel").value.trim(),status:"request",source:"online",deposit:{amount:c.deposit,status:"none",withheld:0},out:null,in:null,signature:null});
+    if(!save())return;
+    $("site-body").innerHTML=`<div class="ok-screen"><div class="big">✓</div><h3 style="margin:0 0 6px;font-size:20px">${t("sb_ok")}</h3><p class="sub" style="margin:0 auto 18px">${t("sb_ok_d",{n:id})}</p>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn" type="button" data-close>${t("sb_back")}</button><a class="btn primary" href="#today" id="sb-see">${t("sb_see")}</a></div></div>`;
+    bindClose($("dlg-site"));$("sb-see").onclick=()=>$("dlg-site").close();
+    renderSite();renderStatic();
+  });
+  bindClose($("dlg-site"));$("dlg-site").showModal();
+}
+
+/* ---------- events ---------- */
+const $=id=>document.getElementById(id);
+document.addEventListener("click",e=>{
+  const el=e.target.closest("[data-booking],[data-car],[data-cust],[data-new-booking],[data-new-car],[data-new-fine],[data-filter],[data-shift],[data-lang],[data-track],[data-approve],[data-decline],[data-charge],[data-paid],[data-bktab],[data-scls],[data-sbook]");
+  if(!el)return;
+  const d=el.dataset;
+  if(d.lang){lang=d.lang;savePrefs();render();if($("dlg-bk").open)renderBk();return}
+  if(d.bktab){bkTab=d.bktab;renderBk();return}
+  if(d.booking){if($("dlg-cust").open)$("dlg-cust").close();openBooking(bkById(d.booking));return}
+  if(d.car){openCar(carById(d.car));return}
+  if(d.cust){openCust(custById(d.cust));return}
+  if(el.hasAttribute("data-new-booking")){openBooking(null);return}
+  if(el.hasAttribute("data-new-car")){openCar(null);return}
+  if(el.hasAttribute("data-new-fine")){openFine();return}
+  if(d.filter){filter=d.filter;renderFleet();return}
+  if(d.scls){SITE.cls=d.scls;renderSite();return}
+  if(d.sbook){openSiteBooking(d.sbook);return}
+  if(d.approve){const b=bkById(d.approve);b.status="confirmed";save();toast(t("t_approved"));render();return}
+  if(d.decline){DB.bookings=DB.bookings.filter(b=>b.id!==d.decline);save();toast(t("t_declined"));render();return}
+  if(d.charge){DB.fines.find(f=>f.id===d.charge).status="charged";save();toast(t("t_charged"));render();return}
+  if(d.paid){DB.fines.find(f=>f.id===d.paid).status="paid";save();toast(t("t_saved"));render();return}
+  if(d.shift!==undefined){const n=+d.shift;winStart=n?addDays(winStart,n):addDays(TODAY,-3);renderCalendar();return}
+  if(d.track){const car=carById(d.track);if(car.service){toast(t("e_service"));return}
+    const r=el.getBoundingClientRect(),i=Math.floor((e.clientX-r.left)/CELL());openBooking(null,{carId:car.id,start:addDays(winStart,Math.max(0,Math.min(N-1,i)))})}
+});
+$("role").addEventListener("change",e=>{role=e.target.value;savePrefs();render()});
+$("reset").addEventListener("click",()=>{DB=seed();save();toast(t("t_reset"));render()});
+function route(){const h=location.hash.slice(1);view=VIEWS.some(([v])=>v===h)?h:"today";render();window.scrollTo(0,0)}
+window.addEventListener("hashchange",route);
+let rz;window.addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(()=>{if(view==="calendar")renderCalendar()},150)});
+let tt;function toast(m){const el=$("toast");el.textContent=m;el.hidden=false;clearTimeout(tt);tt=setTimeout(()=>el.hidden=true,2600)}
+route();
+</script>
